@@ -1,0 +1,100 @@
+أُسْبُوْع	masculine noun: week
+سَنَة	feminine noun: year
+اليَوم	 noun: today
+غَدَاً	 noun: tomorrow
+أَمْس	 noun: yesterday
+تَقْوِيم	feminine noun: calendar
+ثَاَنِيَة	feminine noun: second
+سَاعَة	feminine noun: hour
+دَقِيْقَة	feminine noun: minute
+الساعَة	 noun: o'clock
+ساعَة	feminine noun: clock
+إسْتَطَاعَ	 verb: can
+إسْتَخْدَمَ	 verb: use
+قَاَمَ	 verb: do
+ذَهَبَ	 verb: go
+أتَى	 verb: come
+يضَحِك	 verb: laugh
+قَاَمَ	 verb: make
+رَأى	 verb: see
+بَعِيْد	 adjective: far
+صَغِيْر	 adjective: small
+جَيِّد	 adjective: good
+جَميل	 adjective: beautiful
+قَبيح	 adjective: ugly
+صَعب	 adjective: difficult
+سَهل	 adjective: easy
+سَيِّيء	 adjective: bad
+بِجِوار	 adjective: near
+تَشَرًفنا	 expression: Nice to meet you.
+مَرحَباً	 expression: Hello.
+صَباحُ الخَيرْ	 expression: Good morning.
+مَسَاءُ الخَيرْ	 expression: Good afternoon.
+مَسَاءُ الخَيرْ	 expression: Good evening.
+تُصبِح على خَيْر	 expression: Good night.
+كَيْفَ حَالُك ؟	 expression: How are you?
+شُكراً	 expression: Thank you!
+لا	 noun: No.
+لَذِيذَة	 expression: Delicious!
+أنا ... (الإسم)	 expression: I'm...(name).
+مع السلامة	 expression: Goodbye.
+نَعَم	 expression: Yes.
+الإثْنَيْن	masculine noun: Monday
+الثُلاثَاء	masculine noun: Tuesday
+الأرْبِعَاء	masculine noun: Wednesday
+الخَمِيْس	masculine noun: Thursday
+الجُمْعَة	masculine noun: Friday
+السَبْتَ	masculine noun: Saturday
+الأحَد	masculine noun: Sunday
+مايو	 noun: May
+يَنايِر	masculine noun: January
+فِبرايِر	 noun: February
+مارِس	 noun: March
+اِبريل	masculine noun: April
+يونيو	masculine noun: June
+يوليو	masculine noun: July
+أغُسطُس	 noun: August
+سِبتَمبِر	 noun: September
+أُكتوبَر	masculine noun: October
+نوفَمبِر	 noun: November
+ديسَمبِر	 noun: December
+صِفْر	 noun: zero
+وَاحِد	 noun: one
+إثْنَان	 noun: two
+ثَلاثَة	 noun: three
+أرْبَعَة	 noun: four
+خَمْسَة	 noun: five
+سِتَّة	 noun: six
+سَبْعَة	 noun: seven
+ثَمَانِيَة	 noun: eight
+تِسْعَة	 noun: nine
+عَشْرَة	 noun: ten
+قَهْوَة	feminine noun: coffee
+بِيْرَة	feminine noun: beer
+شَاي	masculine noun: tea
+نَبِيذ	masculine noun: wine
+مَاء	masculine noun: water
+لَحْم بَقَرِي	masculine phrase: beef
+خِنزير	masculine noun: pork
+دَجَاج	feminine noun: chicken
+خَرُوْف	masculine noun: lamb
+سَمَك	 noun: fish
+قَدَم	masculine noun: foot
+سَاق	masculine noun: leg
+رَأس	feminine noun: head
+ذِرَاع	masculine noun: arm
+يَد	feminine noun: hand
+إِصْبَع	feminine noun: finger
+الجَسَد	 noun: body
+مَعِدَة	feminine noun: stomach
+ظَهر	 noun: back
+صَدر	 noun: chest
+مُمَرِّضَة	feminine noun: nurse
+مُوَظَّف	masculine noun: employee
+ضابِط شُرْطَة	masculine noun: police officer
+طَاهِى	masculine noun: cook
+مُهَنْدِس	masculine noun: engineer
+طَبِيْب	masculine noun: doctor
+مُدِيْر	masculine noun: manager
+أسْتَاذة	feminine noun: teacher
+مُبَرْمِج	masculine noun: programmer

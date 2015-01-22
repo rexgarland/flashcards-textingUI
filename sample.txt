@@ -1,0 +1,10 @@
+# This is a sample flashcard set that can be used with the flashcards server modules in this folder. Certain properties of flashcards will be update as the file is used to test knowledge.
+# Every line that starts with # is considered a comment and ignored when reading the file.
+
+# Flashcards begin on the first functional line. Properties are tab-separated.
+# Flashcard data includes the data on front and back, the count of correct and incorrect answers to the flashcard, and the neglectedness. Neglectedness is the number of days since the last testing.
+# Format:	front	back	correct_count	incorrect_count	neglectedness
+ejemplo	example	3	2	.8
+
+# Flashcards can be added to the list without the last 3 properties. The last 3 properties will then default to 0, 0, and 1.
+nuevo	new
