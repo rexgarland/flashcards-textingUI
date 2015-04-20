@@ -1,5 +1,5 @@
 """
-A module to schedule and send flashcard messages from the server. 
+A module to schedule and send flashcard messages from a server. 
 
 The module uses the selection.py module to create selections and save them to a daily file.
 
@@ -11,14 +11,14 @@ The module uses the selection.py module to create selections and save them to a 
 
 """
 
-import selection, flashcardIO, time, imaplib, datetime, smtplib, email, getpass, imaplib, os, re, threading
+import selection, flashcardIO, time, imaplib, datetime, smtplib, email, getpass, os, re, threading, pickle
 import numpy as np
 
 HOURLYFILE = 'hourly_probabilities.dat'
 RECEIVEDFILE = 'received.dat'
 
 def create_message(card, id):
-	return "Subject: "+id+"\n\n"+card.to_text()
+	return "Subject: "+str(id)+"\n\n"+card.to_text()
 
 def send_message(server, card, id):
 	server.sendmail('Rex', '3109244701@txt.att.net', create_message(card, id))
@@ -42,6 +42,11 @@ class Send(threading.Thread):
 		self.password = password
 		self.server = None
 		self.abort = False
+		try:
+			self.update_server()
+		except:
+			print "Error: smtp authentication failed. Check login information."
+			self.abort = True
 
 	def update_server(self):
 		self.server = smtplib.SMTP("smtp.gmail.com", 587)
@@ -53,7 +58,6 @@ class Send(threading.Thread):
 			# controls sending of flashcards and saving of data
 
 			events = selection.schedule()
-			print [minutes2datetime(event[1]) for event in events]
 
 			# loop until all cards have been sent, catch negative times and continue
 			for event in events:
@@ -63,10 +67,8 @@ class Send(threading.Thread):
 					send_message(self.server, event[0], event[0].id)
 				except IOError:
 					print "Error: past time for sending card '%s'." % event[0].text[0]
-				except:
-					print "Error: unable to send card '%s'." % event[0].text[0]
 
-			# wait until a little after midnight to restart (this gives collect.py time to update received data)
+			# wait until a little after midnight to restart (this gives the Receive thread time to update received data)
 			delay_seconds = 30
 			tmrw = datetime.datetime.now()+datetime.datetime.timedelta(1)
 			midnight = datetime.datetime(tmrw.year, tmrw.month, tmrw.day, 0, 0, 10)
@@ -139,6 +141,9 @@ def write_times(list_of_minutes):
 	indices = np.array([time2index(time) for time in list_of_minutes])
 	new_indices = indices2array(indices)
 
+	if not os.path.isfile(HOURLYFILE):
+		with open(HOURLYFILE,'w') as f:
+			pickle.dump([np.ones(24*4)])
 	with open(HOURLYFILE,'r') as f:
 		old_indices = pickle.load(f)
 	with open(HOURLYFILE,'w') as f:
@@ -185,4 +190,4 @@ if __name__=='__main__':
 	except KeyboardInterrupt:
 		thread1.abort = True
 		thread2.abort = True
-
+	PASSWORD = '\0'*100
