@@ -48,27 +48,31 @@ class Send(threading.Thread):
 
 	def run(self):
 		while True:
-			# controls sending of flashcards and saving of data
+			try:
+				# controls sending of flashcards and saving of data
 
-			events = selection.schedule()
+				events = selection.schedule()
 
-			# loop until all cards have been sent, catch negative times and continue
-			for event in events:
-				try:
-					wait_until(minutes2datetime(event[1]))
-					self.update_server()
-					send_message(self.server, event[0], event[0].id)
-				except IOError:
-					print "Error: past time for sending card '%s'." % event[0].text[0]
-				except:
-					print "Error: unable to send card '%s'." % event[0].text[0]
-			
+				# loop until all cards have been sent, catch negative times and continue
+				for event in events:
+					try:
+						wait_until(minutes2datetime(event[1]))
+						self.update_server()
+						send_message(self.server, event[0], event[0].id)
+					except IOError:
+						print "Error: past time for sending card '%s'." % event[0].text[0]
+					except:
+						print "Error: unable to send card '%s'." % event[0].text[0]
+				
 
-			# wait until a little after midnight to restart (this gives collect.py time to update received data)
-			delay_seconds = 30
-			tmrw = datetime.datetime.now()+datetime.datetime.timedelta(1)
-			midnight = datetime.datetime(tmrw.year, tmrw.month, tmrw.day, 0, 0, 10)
-			wait_until(midnight)
+				# wait until a little after midnight to restart (this gives collect.py time to update received data)
+				delay_seconds = 30
+				tmrw = datetime.datetime.now()+datetime.datetime.timedelta(1)
+				midnight = datetime.datetime(tmrw.year, tmrw.month, tmrw.day, 0, 0, 10)
+				wait_until(midnight)
+			except KeyboardInterrupt:
+				print "Program exited."
+				break
 
 
 
@@ -155,17 +159,21 @@ class Receive(threading.Thread):
 
 	def update_server(self):
 		self.server = imaplib.IMAP4_SSL("imap.gmail.com")
-		self.server.login(self.username,self.password)
+		self.server.login(self.username, self.password)
 
 	def run(self):
 		while True:
-			# wait until midnight
-			tmrw = datetime.datetime.now()+datetime.timedelta(1)
-			midnight = datetime.datetime(tmrw.year, tmrw.month, tmrw.day, 0, 0)
-			wait_until(midnight)
+			try:
+				# wait until midnight
+				tmrw = datetime.datetime.now()+datetime.timedelta(1)
+				midnight = datetime.datetime(tmrw.year, tmrw.month, tmrw.day, 0, 0)
+				wait_until(midnight)
 
-			self.update_server()
-			log_responses(self.server())
+				self.update_server()
+				log_responses(self.server())
+			except KeyboardInterrupt:
+				print "Program exited."
+				break
 
 if __name__=='__main__':
 	USERNAME = 'rex.garland'
