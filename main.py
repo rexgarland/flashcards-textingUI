@@ -10,12 +10,16 @@ The module uses the selection.py module to create selections and save them to a 
 3) method for sending a message.
 
 """
-
-import selection, flashcardIO, time, imaplib, datetime, smtplib, email, getpass, os, re, threading, pickle
+import selection, flashcardIO
+import imaplib, smtplib, email, getpass
+import os, re, threading, pickle
+import time, datetime, dateutil, pytz
 import numpy as np
 
 HOURLYFILE = 'hourly_probabilities.dat'
 RECEIVEDFILE = 'received.dat'
+
+MY_TIMEZONE = pytz.timezone('US/Pacific')
 
 def create_message(card, id):
 	return "Subject: "+str(id)+"\n\n"+card.to_text()
@@ -76,20 +80,26 @@ class Send(threading.Thread):
 
 
 
-
-
 def parse_message(message):
-	flash_id = int(message.get('Subject').split()[1])
-	dt = message.get('Date')
-	t = time.strptime(' '.join(dt.split()[:-1]), "%a, %d %b %Y %H:%M:%S")
-	date = datetime.datetime.fromtimestamp(time.mktime(t))
 	s = message.as_string()
-	text = re.match(r'.*?X-OPWV-Extra-Message-Type: Reply\n\n(?P<response>.*?)\r\n\r\n', s, re.DOTALL).groups(0).strip()
+	regex = re.compile(r'.*?\nDate:(?P<date>.*?)\n.*?\nSubject: RE:(?P<id>.*?)\n.*?Message-Type: Reply(?P<response>.*?)-----Original Message-----', re.DOTALL)
+	match = regex.match(s).groupdict()
+
+	flash_id = int(match['id'])
+	date = dateutil.parser.parse(match['date'].strip())
+	# move to PCT timezone
+	date = date.astimezone(MY_TIMEZONE).replace(tzinfo=None)
+	text = match['response'].strip()
 	if text.lower()=='yes':
 		correct=True
 	if text.lower()=='no':
 		correct=False
+
 	return (flash_id, date, correct)
+
+def is_recent(date):
+	delta = datetime.datetime.now() - date
+	return delta.days<=1
 
 def fetch_responses(server):
 	server.select("INBOX")
@@ -98,24 +108,27 @@ def fetch_responses(server):
 	items = items[0].split() # getting the mails id
 	with open(RECEIVEDFILE, 'r') as f:
 		received_ids = pickle.load(f)
+	# only consider emails that haven't been checked
+	temp = []
 	for i in range(len(items)):
-		if items[i] in received_ids:
-			del items[i]
+		if items[i] not in received_ids:
+			temp.append(items[i])
 
 	responses = []
 	read_ids = []
 
-	for emailid in items:
+	for emailid in temp:
+		resp, data = server.fetch(emailid, "(RFC822)") # fetching the mail, "`(RFC822)`" means "get the whole stuff", but you can ask for headers only, etc
+		email_body = data[0][1] # getting the mail content
+		message = email.message_from_string(email_body) # parsing the mail content to get a mail object
+
 		try:
-			resp, data = server.fetch(emailid, "(RFC822)") # fetching the mail, "`(RFC822)`" means "get the whole stuff", but you can ask for headers only, etc
-			email_body = data[0][1] # getting the mail content
-			message = email.message_from_string(email_body) # parsing the mail content to get a mail object
-
-			responses.append(parse_message(message))
-
+			response = parse_message(message)
+			if is_recent(response[1]):
+				responses.append(response)
 			read_ids.append(emailid)
 		except:
-			print "Error: failed to read user response with email id %s." % emailid
+			print "Error: failed to read user response with email id %s. Text below:\n\n%s" % (emailid, message.as_string())
 
 	with open(RECEIVEDFILE, 'w') as f:
 		pickle.dump(received_ids+read_ids, f)
