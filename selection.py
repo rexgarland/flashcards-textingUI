@@ -34,7 +34,7 @@ def select_cards():
 	occurrences = find_card_frequencies()
 	total_cards = []
 
-	for filename in occurrences.keys():
+	for filename in occurrences:
 		cards = flashcardIO.load(filename)
 		number = occurrences[filename]
 		weights = []
@@ -43,7 +43,7 @@ def select_cards():
 		xk, pk = zip(*weights)
 		pk = np.array(pk); pk = normalize(pk)
 		R = rv_discrete(size=number, values=(xk, pk))
-		total_cards.append([cards[index] for index in R])
+		total_cards += [cards[index] for index in R]
 
 	return total_cards
 
