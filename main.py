@@ -23,7 +23,8 @@ def create_message(card, id):
 def send_message(server, card, id):
 	server.sendmail('Rex', '3109244701@txt.att.net', create_message(card, id))
 
-wait_until = lambda datetimethen: time.sleep((datetimethen-datetime.datetime.now()).seconds)
+def wait_until(datetimethen):
+		time.sleep((datetimethen-datetime.datetime.now()).seconds)
 
 def minutes2datetime(minutes):
 	now = datetime.datetime.now()
@@ -40,6 +41,7 @@ class Send(threading.Thread):
 		self.username = username
 		self.password = password
 		self.server = None
+		self.abort = False
 
 	def update_server(self):
 		self.server = smtplib.SMTP("smtp.gmail.com", 587)
@@ -47,32 +49,28 @@ class Send(threading.Thread):
 		self.server.login(self.username, self.password)
 
 	def run(self):
-		while True:
-			try:
-				# controls sending of flashcards and saving of data
+		while self.abort==False:
+			# controls sending of flashcards and saving of data
 
-				events = selection.schedule()
+			events = selection.schedule()
+			print [minutes2datetime(event[1]) for event in events]
 
-				# loop until all cards have been sent, catch negative times and continue
-				for event in events:
-					try:
-						wait_until(minutes2datetime(event[1]))
-						self.update_server()
-						send_message(self.server, event[0], event[0].id)
-					except IOError:
-						print "Error: past time for sending card '%s'." % event[0].text[0]
-					except:
-						print "Error: unable to send card '%s'." % event[0].text[0]
-				
+			# loop until all cards have been sent, catch negative times and continue
+			for event in events:
+				try:
+					wait_until(minutes2datetime(event[1]))
+					self.update_server()
+					send_message(self.server, event[0], event[0].id)
+				except IOError:
+					print "Error: past time for sending card '%s'." % event[0].text[0]
+				except:
+					print "Error: unable to send card '%s'." % event[0].text[0]
 
-				# wait until a little after midnight to restart (this gives collect.py time to update received data)
-				delay_seconds = 30
-				tmrw = datetime.datetime.now()+datetime.datetime.timedelta(1)
-				midnight = datetime.datetime(tmrw.year, tmrw.month, tmrw.day, 0, 0, 10)
-				wait_until(midnight)
-			except KeyboardInterrupt:
-				print "Program exited."
-				break
+			# wait until a little after midnight to restart (this gives collect.py time to update received data)
+			delay_seconds = 30
+			tmrw = datetime.datetime.now()+datetime.datetime.timedelta(1)
+			midnight = datetime.datetime(tmrw.year, tmrw.month, tmrw.day, 0, 0, 10)
+			wait_until(midnight)
 
 
 
@@ -156,30 +154,35 @@ class Receive(threading.Thread):
 		self.username = username
 		self.password = password
 		self.server = None
+		self.abort = False
 
 	def update_server(self):
 		self.server = imaplib.IMAP4_SSL("imap.gmail.com")
 		self.server.login(self.username, self.password)
 
 	def run(self):
-		while True:
-			try:
-				# wait until midnight
-				tmrw = datetime.datetime.now()+datetime.timedelta(1)
-				midnight = datetime.datetime(tmrw.year, tmrw.month, tmrw.day, 0, 0)
-				wait_until(midnight)
+		while self.abort==False:
+			# wait until midnight
+			tmrw = datetime.datetime.now()+datetime.timedelta(1)
+			midnight = datetime.datetime(tmrw.year, tmrw.month, tmrw.day, 0, 0)
+			wait_until(midnight)
 
-				self.update_server()
-				log_responses(self.server())
-			except KeyboardInterrupt:
-				print "Program exited."
-				break
+			self.update_server()
+			log_responses(self.server())
+
 
 if __name__=='__main__':
 	USERNAME = 'rex.garland'
 	PASSWORD = getpass.getpass("Enter your Gmail password: ")
-	thread1 = Send(USERNAME, PASSWORD)
-	thread2 = Receive(USERNAME, PASSWORD)
+	thread1 = Send(USERNAME, PASSWORD); thread1.daemon = True
+	thread2 = Receive(USERNAME, PASSWORD); thread2.daemon = True
 	thread1.start()
 	thread2.start()
-	
+	# keyboard exit functionality
+	try:
+		while (thread1.isAlive() and thread2.isAlive()):
+			time.sleep(1)
+	except KeyboardInterrupt:
+		thread1.abort = True
+		thread2.abort = True
+
