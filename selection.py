@@ -8,7 +8,7 @@ This module uses statistics.py to weigh each flashcard and randomly select a spe
 """
 from datetime import datetime
 import numpy as np
-import flashcardIO, pickle
+import flashcardIO, pickle, os
 
 OCCURRENCEFILE = 'daily_frequencies.txt'
 # hourly file must be a pickled list of tuples representing occurrences in 15 minute bins
@@ -80,6 +80,9 @@ def index2random_datetime(index):
 
 def select_times(total_number):
 	# selects times during the day to test total_number cards
+	if not os.path.isfile(HOURLYFILE):
+		with open(HOURLYFILE,'w') as f:
+			pickle.dump([np.ones(24*4)])
 	with open(HOURLYFILE, 'r') as datafile:
 		data = pickle.load(datafile)
 	# data is weighted exponentially to decrease with days past
