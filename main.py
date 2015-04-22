@@ -22,7 +22,7 @@ RECEIVEDFILE = 'received.dat'
 MY_TIMEZONE = pytz.timezone('US/Pacific')
 
 def create_message(card, id):
-	return "Subject: "+str(id)+"\n\n"+card.to_text()
+	return "Subject: "+str(id)+"\n\n"+card.message()
 
 def send_message(server, card, id):
 	server.sendmail('Rex', '3109244701@txt.att.net', create_message(card, id))
@@ -140,7 +140,7 @@ def log_responses(server):
 	if responses:
 		list_of_minutes = [datetime2minutes(date) for (flash_id, date, correct) in responses]
 		write_times(list_of_minutes)
-		flashcardIO.update_cards({flash_id: correct for  (flash_id, date, correct) in responses})
+		flashcardIO.daily_update({flash_id: correct for  (flash_id, date, correct) in responses})
 
 time2index = lambda time: int(time//15)
 def indices2array(indices):
