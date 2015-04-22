@@ -62,7 +62,7 @@ def find_card_frequencies():
 		except StopIteration:
 			break
 		except:
-			print "Error: could not read 'datafile.txt' file to read flashcard set occurrences."
+			print "Error: could not read '%s' file to read flashcard set occurrences." % OCCURRENCEFILE
 			datafile.close()
 			exit()
 
