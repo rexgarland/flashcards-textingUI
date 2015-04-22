@@ -1,3 +1,4 @@
 # This datafile stores data on flashcard occurence for each flashcard set represented as a file in this directory.
 
-spanish.txt 	7
+data/spanish.txt 	7
+data/expresiones_espanoles.txt	10
