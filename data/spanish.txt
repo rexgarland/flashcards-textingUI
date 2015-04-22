@@ -1,21 +1,21 @@
 # comment
-acordar	to decide	0	0	100.0	0
-privar	deprive	0	0	100.0	0
-exigir	to demand	0	0	100.0	0
-someter	to subjugate	0	0	100.0	0
-surgir	to arise	0	0	100.0	0
-gesto	gesture	0	0	100.0	0
-campaña	countryside	0	0	100.0	0
-repecho	steep slope
-gestar	become pregnant, be pregnant; gestate
-descompasado	excessive, out of proportion
-pista	trail, clue, track
-apodo	nickname, alias
-tramo	stretch, section
-chicha	corn liquor, (coloq) meat
-bucle	ringlet (of hair), loop (of instructions)
-apretado	cramped; tight; busy, full
-rallar	grate, shred
-placar	tackle, block (sports); tackle, bring down
-almorranas	haemorrhoids
-gentilicio	demonym (name given to natives to a place)
+acordar	to decide	68
+privar	deprive	69
+exigir	to demand	70
+someter	to subjugate	71
+surgir	to arise	72
+gesto	gesture	73
+campaña	countryside	74
+repecho	steep slope	75
+gestar	become pregnant, be pregnant; gestate	76
+descompasado	excessive, out of proportion	77
+pista	trail, clue, track	78
+apodo	nickname, alias	79
+tramo	stretch, section	80
+chicha	corn liquor, (coloq) meat	81
+bucle	ringlet (of hair), loop (of instructions)	82
+apretado	cramped; tight; busy, full	83
+rallar	grate, shred	84
+placar	tackle, block (sports); tackle, bring down	85
+almorranas	haemorrhoids	86
+gentilicio	demonym (name given to natives to a place)	87

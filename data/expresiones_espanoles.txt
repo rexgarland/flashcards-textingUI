@@ -1,0 +1,37 @@
+ANCHA ES CASTILLA	Obrar con total libertad. En los tiempos de la Reconquista, los desolados campos castellanos eran el sitio perfecto para iniciar un negocio.	0
+EL BAILE DE SAN VITO	Enfermedad infecciosa convulsiva que afecta a los niños. Se rezaba a este santo, que también sufrió convulsiones, implorando la curación.	1
+EL CHOCOLATE DEL LORO	Una familia aristocrática que quiso reducir gastos llegó a la conclusión de que sólo se podía ahorrar la ración de chocolate del loro.	2
+EL PATIO DE MONIPODIO	En Rinconete y Cortadillo, de Cervantes, el jefe del hampa sevillana recibía allí a los nuevos ladrones.	3
+ENTRE PINTO Y VALDEMORO	Hace siglos en Madrid se bebía vino de las localidades de Pinto y Valdemoro. La expresión significa estar indeciso (al elegir entre los dos vinos) o borracho (elegir los dos).	4
+ESTAR A LA LUNA DE VALENCIA	El dicho se aplicaba antiguamente a la gente que tenía que dormir fuera de las murallas de la ciudad por llegar tarde.	5
+ESTAR EN BABIA	La comarca leonesa de Babia era el lugar al que iban los reyes de León a descansar. Cuando el rey estaba en Babia, no quería saber nada de la corte.	6
+¡ESTO ES JAUJA	Es el nombre castellano de un Valle andino conquistado por Pizarro en lo que hoy es Perú, famoso por su clima benigno y la riqueza de su suelo.	7
+GATO ENCERRADO	Los gatos eran bolsas para guardar el dinero que se llevaban encerradas, es decir, ocultas entre la ropa.	8
+IRSE DE PICOS PARDOS	Antiguamente la ley obligaba a las prostitutas a vestir un jubón con picos o ribetes de color pardo.	9
+LA CARABINA DE AMBROSIO	Era un bandolero andaluz del siglo XIX, tan inofensivo que su carabina ni siquiera tenía pólvora.	10
+LA CUADRATURA DEL CÍRCULO	Famoso problema irresoluble que, sin embargo, generó en el pasado abundante literatura.	11
+LA SOPA BOBA	La que daban a los pobres en los conventos. Hoy, vivir de la sopa boba es llevar una vida a expensas de otros.	12
+LLEVAR AL HUERTO	Se dice desde que la Celestina consiguió llevar a Melibea al huerto en que esperaba Calixto	13
+LLORA COMO MUJER LO QUE NO HAS SABIDO DEFENDER COMO UN HOMBRE	dijo en 1492 la madre de Boabdil a su hijo, cuando éste lloraba al contemplar por última vez Granada, ya en manos de los Reyes Católicos.	14
+LOS AMANTES DE TERUEL	Leyenda del siglo XIII que narra el amor imposible entre Juan Diego Martínez de Marcilla e Isabel de Segura. Varios autores, como Tirso de Molina, la recogieron en sus obras. Se suele añadir la coletilla "tonta ella y tonto él".	15
+MÁS "CORNÁS" DA EL HAMBRE	Respuesta del torero Manuel García, El Espartero, cuando le preguntaban si no temía arriesgarse tanto en la plaza. Murió de una mala corná.	16
+MÁS FEO QUE PICIO	En el siglo XIX, Picio fue un zapatero granadino condenado a muerte que, de pronto, fue indultado. De la impresión, perdió pelo, cejas y pestañas y se convirtió en paradigma de fealdad.	17
+MENOS LOBOS	Un andaluz llamado Pinto decía haber visto una manada de l00 lobos. Sin creer el relato, sus amigos le decían "¡Menos lobos, tío Pinto!". El hombre fue rebajando la cifra hasta reconocer que sólo había visto la cola de un animal.	18
+MOROS EN LA COSTA	Divulgaron el dicho las milicias populares que se dedicaban a frenar los ataques de los piratas berberiscos.	19
+¡NARANJAS DE LA CHINA	Se usa para negar lo que otro acaba de afirmar. Viene de la época en que el pueblo no creía que las naranjas procedieran de tan lejano lugar.	20
+NO SE GANÓ ZAMORA EN UNA HORA	Se ganó en siete meses. Los que estuvo la ciudad asediada por Sancho II, que fue traicionado al final por Bellido Dolfos. La ciudad volvió a manos de la reina Doña Urraca.	21
+PARÍS BIEN VALE UNA MISA	Se supone que lo dijo el rey francés Enrique IV (1553-1610), en el momento de convertirse al cristianismo para poder ganar el trono.	22
+PASAR UNA NOCHE TOLEDANA	No poder dormir, según Covarrubias, porque en Toledo, en tiempo de verano, los mosquitos persiguen a los forasteros, que no están prevenidos de remedios como los demás.	23
+PELAR LA PAVA	Una dueña andaluza mandaba a su criada desplumar una pava. Ésta, junto a la reja de una ventana, lo hacía a la vez que hablaba con su novio.	24
+POR LOS CERROS DE ÚBEDA	Femando III el santo esperaba a un caballero que iba a ayudarle con sus huestes a tomar, la ciudad jienense. Este, con pocas ganas de guerra, llegó tras la conquista diciendo que se había perdido por los cerros.	25
+PONER UNA PICA EN FLANDES	Se dice cuando algo resulta muy difícil de lograr. En tiempos de Felipe IV era casi imposible encontrar reclutas que quisieran alistarse en los Tercios de Flandes y que, por tanto, tomaran la "pica" o lanza de los soldados.	26
+QUEDARSE SIN BLANCA	La blanca era una moneda castellana de plata, acuñada por primera vez en tiempos de Pedro I (1334-1369).	27
+QUIEN FUE A SEVILLA PERDIÓ SU SILLA	En el siglo XVI, el arzobispo de Sevilla cambió su puesto a su sobrino, arzobispo de Santiago, que era incapaz de dominar la ciudad gallega. Cuando quiso volver a su tierra, el sobrino se negó a cederle su puesto.	28
+ROMA NO PAGA TRAIDORES	En el siglo II a.C., el cónsul Marco Pompilio sobornó a los enviados de Viriato y logró matar al rebelde, pero nunca pagó a los traidores.	29
+ROMPER UNA LANZA	Se supone que a favor de alguien. Así hacían los caballeros en las justas medievales para defender el honor de otra persona.	30
+SABER MÁS QUE EL MAESTRO CIRUELO	Célebre preceptor de Felipe II y catedrático de Teología en Alcalá de Henares.	31
+SALGA EL SOL POR ANTEQUERA	Se usa para mostrar despreocupación por el asunto. En la toma de Granada, en 1491, se decía como equivalente a "salga el sol por donde salga". El sol no sale por Antequera, que está al oeste de Granada.	32
+¡SANTIAGO Y CIERRA ESPAÑA	Grito de guerra español. Se dice que Santiago apóstol dirigió a los cristianos en la batalla contra Abderramán II Cerrar, en castellano antiguo, era embestir, atacar al enemigo.	33
+SE ARMÓ LA DE SAN QUINTÍN	En esta batalla (1557), el Ejército español entró en Francia desde Flandes y aniquiló al francés, pero perdió a la vez muchos hombres.	34
+TODOS A UNA, COMO EN FUENTEOVEJUNA	Como relató Lope de Vega, en este pueblo cordobés la gente se unió para matar al Comendador, autor de muchos agravios.	35
+¡VIVA LA PEPA	Grito de los liberales aludiendo a la Constitución de 1812, aprobada el 19 de marzo (San José), cuando los franceses prohibieron vitorearla en público.	36
