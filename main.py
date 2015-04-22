@@ -62,7 +62,7 @@ class Send(threading.Thread):
 			# controls sending of flashcards and saving of data
 
 			events = selection.schedule()
-
+			print [str(minutes2datetime(event[1])) for event in events]
 			# loop until all cards have been sent, catch negative times and continue
 			for event in events:
 				try:
