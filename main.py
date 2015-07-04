@@ -13,12 +13,11 @@ The module uses the selection.py module to create selections and save them to a 
 import selection, flashcardIO
 import imaplib, smtplib, email, getpass
 import os, re, threading, pickle
-import time, datetime, dateutil, pytz
+import time, datetime, dateutil
 import numpy as np
 
 HOURLYFILE = 'hourly_probabilities.dat'
 RECEIVEDFILE = 'received.dat'
-MY_TIMEZONE = pytz.timezone('US/Pacific')
 
 def create_message(card):
 	return "Subject: "+str(card.id)+"\n\n"+card.message()
@@ -29,7 +28,9 @@ def send_message(server, card):
 def wait_until(datetimethen):
 	seconds = (datetimethen-datetime.datetime.now()).seconds
 	for i in range(seconds):
-		print str(seconds-i)
+		m, s = divmod(seconds-i, 60)
+		h, m = divmod(m, 60)
+		print "%02d:%02d:%02d" % (h, m, s)
 		time.sleep(1)
 
 def minutes2datetime(minutes):
@@ -63,8 +64,9 @@ class Send(threading.Thread):
 		while self.abort==False:
 			# controls sending of flashcards and saving of data
 
-			events = selection.schedule(time_forward=1) # schedule one hour in advance (TESTING purposes)
-			print [str(event[1]) for event in events]
+			events = selection.schedule(time_forward=1) # schedule 15 minutes in advance (TESTING purposes)
+			for event in events:
+				print event[1], event[0]
 			# loop until all cards have been sent, catch negative times and continue
 			for event in events:
 				try:
@@ -75,13 +77,13 @@ class Send(threading.Thread):
 					print "done\nsending message..."
 					send_message(self.server, event[0])
 					print "done"
-				except IOError:
-					print "Error: past time for sending card '%s'." % event[0].text[0]
+				except:
+					print "Error for event: '%s'." % str(event[0])
 
 			# wait until a little after midnight to restart (this gives the Receive thread time to update received data)
 			delay_seconds = 30
-			tmrw = datetime.datetime.now()+datetime.datetime.timedelta(1)
-			midnight = datetime.datetime(tmrw.year, tmrw.month, tmrw.day, 0, 0, 10)
+			tmrw = datetime.datetime.now()+datetime.timedelta(1)
+			midnight = datetime.datetime(tmrw.year, tmrw.month, tmrw.day, 0, 0, delay_seconds)
 			wait_until(midnight)
 
 

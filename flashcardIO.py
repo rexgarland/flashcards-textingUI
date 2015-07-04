@@ -36,7 +36,8 @@ class Flashcard(object):
 
 	def necessity(self):
 		# updates necessity by including difficulty and neglectedness
-		return (1-np.exp(-float(self.days_old)))*(1-np.exp(-float(self.difficulty())))
+		# TESTING: not a dynamic necessity function as of yet
+		return 1
 
 	def metadata(self):
 		return (self.correct_count, self.incorrect_count, self.days_old)
