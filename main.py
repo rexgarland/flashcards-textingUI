@@ -86,22 +86,53 @@ class Send(threading.Thread):
 
 
 
+def pctoffset_from_string(s):
+	h = int(s[1:3]); m = int(s[3:5])
+	if int(s)<0: 
+		hours = -h
+		minutes = -m
+	else:
+		hours = h
+		minutes = m
+	offsethours = hours+8
+	offsetminutes = minutes
+	return datetime.timedelta(hours = offsethours, minutes = offsetminutes)
+
 def parse_message(message):
+	# s = message.as_string()
+	# regex = re.compile(r'.*?\nDate:(?P<date>.*?)\n.*?\nSubject: RE:(?P<id>.*?)\n.*?Message-Type: Reply(?P<response>.*?)-----Original Message-----', re.DOTALL)
+	# match = regex.match(s).groupdict()
+
+	# flash_id = int(match['id'])
+	# date = dateutil.parser.parse(match['date'].strip())
+	# # move to PCT timezone
+	# date = date.astimezone(MY_TIMEZONE).replace(tzinfo=None)
+	# text = match['response'].strip()
+	# if text.lower()=='yes':
+	# 	correct=True
+	# if text.lower()=='no':
+	# 	correct=False
+
+	# return (flash_id, date, correct)
+
 	s = message.as_string()
-	regex = re.compile(r'.*?\nDate:(?P<date>.*?)\n.*?\nSubject: RE:(?P<id>.*?)\n.*?Message-Type: Reply(?P<response>.*?)-----Original Message-----', re.DOTALL)
+	regex = re.compile(r'.*?Subject: RE: (?P<id>[0-9]*).*?[\n\r]{2,4}(?P<response>.*?)[\n\r]{2,4}', re.DOTALL|re.UNICODE)
 	match = regex.match(s).groupdict()
 
 	flash_id = int(match['id'])
-	date = dateutil.parser.parse(match['date'].strip())
+	d = message.values()[message.keys().index('Date')]
+	date = datetime.datetime.strptime(d[:-6], '%a, %d %b %Y %H:%M:%S')
 	# move to PCT timezone
-	date = date.astimezone(MY_TIMEZONE).replace(tzinfo=None)
+	date = date + pctoffset_from_string(d[-5:])
 	text = match['response'].strip()
-	if text.lower()=='yes':
+	if text.lower()[0]=='y':
 		correct=True
-	if text.lower()=='no':
+	if text.lower()[0]=='n':
 		correct=False
 
 	return (flash_id, date, correct)
+
+	message.values()[message.keys().index('Date')]
 
 def is_recent(date):
 	delta = datetime.datetime.now() - date
@@ -133,8 +164,8 @@ def fetch_responses(server):
 			if is_recent(response[1]):
 				responses.append(response)
 			read_ids.append(emailid)
-		except:
-			print "Error: failed to read user response with email id %s. Text below:\n\n%s" % (emailid, message.as_string())
+		except Exception as e:
+			print "~"*80+'\n'+"ERROR: failed to read user response with email id {}., Error text...{}\n".format(emailid, str(e))+"~"*80+"\nText below:\n\n{}".format(message.as_string())
 
 	with open(RECEIVEDFILE, 'w') as f:
 		pickle.dump(received_ids+read_ids, f)
@@ -167,6 +198,7 @@ def write_times(list_of_minutes):
 		old_indices = pickle.load(f)
 	with open(HOURLYFILE,'w') as f:
 		try:
+			print 'times being written'
 			pickle.dump(np.append(old_indices, new_indices).reshape(old_indices.shape[0]+1, old_indices.shape[1]), f)
 		except ValueError:
 			print "Error: failure adding new response times to the data file %s." % HOURLYFILE
@@ -192,7 +224,7 @@ class Receive(threading.Thread):
 			wait_until(midnight)
 
 			self.update_server()
-			log_responses(self.server())
+			log_responses(self.server)
 
 
 if __name__=='__main__':
