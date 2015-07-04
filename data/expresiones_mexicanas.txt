@@ -1,32 +1,32 @@
-Ándale	90% igual que Orale. 
-Ajuaa/Yahuuaa	grito extremadamente Mexicano que implica alegría. 
-Híjole	es mas bien como de tristesa, cuando echas a perder algo. 
-Wey	persona, normalmente usado en saludos (ej	Que hay wey?). 
-Chingado	estropeado (jodido para los españoles). 
-Fregado	estropeado, molestar. 
-Chido	lindo, bonito. 
-Lana	dinero. 
-Gacho	feo. 
-Neta	verdad. 
-Bronca	problema. 
-Pex/Pez	problema, bronca 
-"No hay Pex"	No hay problema (es como mas se usa esta palabra). 
-"Que Pex?"	qué hay? que haces? 
+Ándale	90% igual que Orale.	37
+Ajuaa/Yahuuaa	grito extremadamente Mexicano que implica alegría.	38
+Híjole	es mas bien como de tristesa, cuando echas a perder algo.	39
+Wey	persona, normalmente usado en saludos (ej	40
+Chingado	estropeado (jodido para los españoles).	41
+Fregado	estropeado, molestar.	42
+Chido	lindo, bonito.	43
+Lana	dinero.	44
+Gacho	feo.	45
+Neta	verdad.	46
+Bronca	problema.	47
+Pex/Pez	problema, bronca	48
+"No hay Pex"	No hay problema (es como mas se usa esta palabra).	49
+"Que Pex?"	qué hay? que haces?	50
 Tambien referido a buscar bronca/problemas con alguien. Probocar. 
-"A poco"	"en serio". 
-Chance	tal vez, quizás. Oportunidad. 
-"De perdida"	"de menos", por lo menos. 
-Jalada	chiste malo o de mal gusto 
-"No mames"	no digas/hagas tonterias (hombre... también puede ser no me la chupes...) 
-Naco	ignorante, pobre, mal educado. 
-Latir	gustar. 
-Choro	parrafada, gran charla. 
-Puñal	*********, afeminado. 
-Cuate	amigo. 
-Gringo	persona estadounidense. 
-Madrazo	guantazo en la Boca, como el que dan las madres a los hijos. 
-Metiche	mezuca, cotilla, "metomentodo". 
-Ton	llevarte en carro/coche. 
-Carro	coche. 
-Hueva	pereza, flojera. 
-"Darte hueva"	te aburre no te apetece
+"A poco"	"en serio".	51
+Chance	tal vez, quizás. Oportunidad.	52
+"De perdida"	"de menos", por lo menos.	53
+Jalada	chiste malo o de mal gusto	54
+"No mames"	no digas/hagas tonterias (hombre... también puede ser no me la chupes...)	55
+Naco	ignorante, pobre, mal educado.	56
+Latir	gustar.	57
+Choro	parrafada, gran charla.	58
+Puñal	*********, afeminado.	59
+Cuate	amigo.	60
+Gringo	persona estadounidense.	61
+Madrazo	guantazo en la Boca, como el que dan las madres a los hijos.	62
+Metiche	mezuca, cotilla, "metomentodo".	63
+Ton	llevarte en carro/coche.	64
+Carro	coche.	65
+Hueva	pereza, flojera.	66
+"Darte hueva"	te aburre no te apetece	67

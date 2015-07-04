@@ -5,6 +5,9 @@ This module uses statistics.py to weigh each flashcard and randomly select a spe
 
 1) a method for selecting random cards to display
 
+Options for improvement:
+- neural network for learning when I "know" a card
+- 
 """
 from datetime import datetime
 import numpy as np
@@ -15,11 +18,13 @@ OCCURRENCEFILE = 'daily_frequencies.txt'
 HOURLYFILE = 'hourly_probabilities.dat'
 # pickles a list of numpy arrays storing data on when responses are received from the user
 
+MIDNIGHT = 24*4-1
+FORGETTING_RATE = 0.9
+
 normalize = lambda nparray: nparray.astype(np.float)/np.sum(nparray)
 
-def rv_discrete(size=100, values=([0],[0])):
-	indices = values[0]
-	probs = np.array(values[1], np.float)
+def rv_discrete(size=100, values=[0], weights=[0]):
+	probs = np.array(weights, np.float)
 	probabilities = probs/sum(probs)
 	integrated_probs = [sum(probabilities[:i+1]) for i in range(len(probabilities))]
 	random = np.random.random(size)
@@ -27,7 +32,7 @@ def rv_discrete(size=100, values=([0],[0])):
 		i = 0
 		while r>integrated_probs[i]:
 			i+=1
-		return indices[i]
+		return values[i]
 	return [integrate2index(r) for r in random]
 
 def select_cards():
@@ -37,13 +42,14 @@ def select_cards():
 	for filename in occurrences:
 		cards = flashcardIO.load(filename)
 		number = occurrences[filename]
-		weights = []
-		for index, card in enumerate(cards):
-			weights.append((index, card.necessity()))
-		xk, pk = zip(*weights)
-		pk = np.array(pk); pk = normalize(pk)
-		R = rv_discrete(size=number, values=(xk, pk))
-		total_cards += [cards[index] for index in R]
+		if cards and number>0:
+			weights = []
+			for index, card in enumerate(cards):
+				weights.append((index, card.necessity()))
+			xk, pk = zip(*weights)
+			pk = np.array(pk); pk = normalize(pk)
+			R = rv_discrete(size=number, values=xk, weights=pk)
+			total_cards += [cards[index] for index in R]
 
 	return total_cards
 
@@ -72,27 +78,44 @@ def find_card_frequencies():
 def find_files():
 	return find_card_frequencies().keys()
 
+datetime2index = lambda dt: dt.hour*4+dt.minute//15
 index2random_time = lambda index: index*15+int(np.random.rand()*15)
 def index2random_datetime(index):
 	now = datetime.now()
 	rando_minute = index2random_time(index)
-	datetime(now.year, now.month, now.day, rando_minute//60, rando_minute-60*(rando_minute//60))
+	return datetime(now.year, now.month, now.day, rando_minute//60, rando_minute-60*(rando_minute//60))
 
-def select_times(total_number):
-	# selects times during the day to test total_number cards
+def select_times(total_number, until=MIDNIGHT):
+	# selects times during the day to test total_number cards (now until the "until" variable)
 	if not os.path.isfile(HOURLYFILE):
 		with open(HOURLYFILE,'w') as f:
-			pickle.dump([np.ones(24*4)])
+			pickle.dump([np.ones(24*4)], f)
 	with open(HOURLYFILE, 'r') as datafile:
 		data = pickle.load(datafile)
+		if not data:
+			data = [np.ones(24*4)]
 	# data is weighted exponentially to decrease with days past
-	weighted = normalize(reduce(lambda x,y: 0.9*x+y, data))
-	R = rv_discrete(size=total_number, values=(range(24*4), weighted))
-	return [index2random_time(item) for item in R]
+	weights = reduce(lambda x,y: FORGETTING_RATE*x+y, data)
+	now = datetime2index(datetime.today())
+	for index in range(len(weights)):
+		if index<=now or index>until:
+			weights[index]=0
+	weights = normalize(weights)
+	R = rv_discrete(size=total_number, values=range(24*4), weights=weights)
+	return [index2random_datetime(item) for item in R]
 
-def schedule():
-
+def schedule(time_forward=None):
 	# returns a list of events, each event being a tuple with flashcard and time
 	cards = select_cards()
-	times = select_times(len(cards))
-	return zip(cards, times)
+	if time_forward:
+		index = datetime2index(datetime.now())+time_forward
+		times = select_times(len(cards), until=index)
+	else:
+		times = select_times(len(cards))
+	return sorted(zip(cards, times), key = lambda item: item[1])
+
+
+if __name__=='__main__':
+	print [str(t) for t in select_times(10, until=datetime2index(datetime.today())+1)]
+
+

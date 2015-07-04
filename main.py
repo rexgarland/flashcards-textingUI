@@ -18,17 +18,19 @@ import numpy as np
 
 HOURLYFILE = 'hourly_probabilities.dat'
 RECEIVEDFILE = 'received.dat'
-
 MY_TIMEZONE = pytz.timezone('US/Pacific')
 
-def create_message(card, id):
-	return "Subject: "+str(id)+"\n\n"+card.message()
+def create_message(card):
+	return "Subject: "+str(card.id)+"\n\n"+card.message()
 
-def send_message(server, card, id):
-	server.sendmail('Rex', '3109244701@txt.att.net', create_message(card, id))
+def send_message(server, card):
+	server.sendmail('Rex', '3109244701@txt.att.net', create_message(card))
 
 def wait_until(datetimethen):
-		time.sleep((datetimethen-datetime.datetime.now()).seconds)
+	seconds = (datetimethen-datetime.datetime.now()).seconds
+	for i in range(seconds):
+		print str(seconds-i)
+		time.sleep(1)
 
 def minutes2datetime(minutes):
 	now = datetime.datetime.now()
@@ -61,14 +63,18 @@ class Send(threading.Thread):
 		while self.abort==False:
 			# controls sending of flashcards and saving of data
 
-			events = selection.schedule()
-			print [str(minutes2datetime(event[1])) for event in events]
+			events = selection.schedule(time_forward=1) # schedule one hour in advance (TESTING purposes)
+			print [str(event[1]) for event in events]
 			# loop until all cards have been sent, catch negative times and continue
 			for event in events:
 				try:
-					wait_until(minutes2datetime(event[1]))
+					print 'next event at', str(event[1])
+					wait_until(event[1])
+					print "server updating..."
 					self.update_server()
-					send_message(self.server, event[0], event[0].id)
+					print "done\nsending message..."
+					send_message(self.server, event[0])
+					print "done"
 				except IOError:
 					print "Error: past time for sending card '%s'." % event[0].text[0]
 
