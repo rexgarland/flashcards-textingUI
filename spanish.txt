@@ -1,8 +1,0 @@
-# comment
-acordar	to decide	0	0	100.0	0
-privar	deprive	0	0	100.0	0
-exigir	to demand	0	0	100.0	0
-someter	to subjugate	0	0	100.0	0
-surgir	to arise	0	0	100.0	0
-gesto	gesture	0	0	100.0	0
-campaña	countryside	0	0	100.0	0

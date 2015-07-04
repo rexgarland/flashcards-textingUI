@@ -56,12 +56,14 @@ def loadmetadata():
 	return metadata
 
 def new_id(metadata):
-	# assign next biggest id number
+	# assign smallest available id
 	if not metadata:
-		cardid = 0
+		return 0
 	else:
-		cardid = max(metadata)+1
-	return cardid
+		for i in range(max(metadata)):
+			if i not in metadata:
+				return i
+		return max(metadata)+1
 
 def line_to_flashcard(line, metadata):
 	split = line.strip().split('\t')
@@ -148,7 +150,6 @@ def clear_metadata(filename):
 	metadata = loadmetadata()
 	with open(filename, 'r') as f:
 		lines = f.readlines()
-	buffer_file = open('buffer.txt','w')
 	line_no = 0
 	for line in lines:
 		line_no += 1
@@ -164,8 +165,8 @@ def clear_metadata(filename):
 	buffer_file.close()
 	with open(METADATAFILE, 'w') as metafile:
 		pickle.dump(metadata, metafile)
-	os.remove(filename)
-	os.rename('buffer.txt', filename)
+	with open(filename, 'r') as f:
+		lines = f.readlines()
 	clean_metadata()
 
 def daily_update(updates_dict):
