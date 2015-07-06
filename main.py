@@ -41,7 +41,6 @@ def minutes2datetime(minutes):
 
 datetime2minutes = lambda dt: 60*dt.hour+dt.minute
 
-
 class Send(threading.Thread):
 	def __init__(self, username, password):
 		threading.Thread.__init__(self)
@@ -86,8 +85,6 @@ class Send(threading.Thread):
 			midnight = datetime.datetime(tmrw.year, tmrw.month, tmrw.day, 0, 0, delay_seconds)
 			wait_until(midnight)
 
-
-
 def pctoffset_from_string(s):
 	h = int(s[1:3]); m = int(s[3:5])
 	if int(s)<0: 
@@ -118,7 +115,7 @@ def parse_message(message):
 	# return (flash_id, date, correct)
 
 	s = message.as_string()
-	regex = re.compile(r'.*?Subject: RE: (?P<id>[0-9]*).*?[\n\r]{2,4}(?P<response>.*?)[\n\r]{2,4}', re.DOTALL|re.UNICODE)
+	regex = re.compile(r'.*?Subject: RE: (?P<id>[0-9]*).*?[\n\r]{2,4}(?P<correct>.*?)[\n\r]{2,4}', re.DOTALL|re.UNICODE)
 	match = regex.match(s).groupdict()
 
 	flash_id = int(match['id'])
@@ -126,23 +123,23 @@ def parse_message(message):
 	date = datetime.datetime.strptime(d[:-6], '%a, %d %b %Y %H:%M:%S')
 	# move to PCT timezone
 	date = date + pctoffset_from_string(d[-5:])
-	text = match['response'].strip()
+	text = match['correct'].strip()
 	if text.lower()[0]=='y':
 		correct=True
 	if text.lower()[0]=='n':
 		correct=False
 
-	return (flash_id, date, correct)
-
-	message.values()[message.keys().index('Date')]
+	return {'id': flash_id, 'datetime': date, 'correct': correct}
 
 def is_recent(date):
+	# TESTING: robustness: I will eventually implement this to check emails since the date of the last email checked (not necessarily one day ago)
 	delta = datetime.datetime.now() - date
 	return delta.days<=1
 
-def fetch_responses(server):
+def fetch_reviews(server):
+	"""Returns a dictionary of reviews {flashcard_id: reviews}.
+	Reviews is a list of tuples (datetime, correct?)"""
 	server.select("INBOX")
-
 	resp, items = server.search(None, 'FROM', '"3109244701.txt.att.net"') # you could filter using the IMAP rules here (check http://www.example-code.com/csharp/imap-search-critera.asp)
 	items = items[0].split() # getting the mails id
 	with open(RECEIVEDFILE, 'r') as f:
@@ -152,34 +149,27 @@ def fetch_responses(server):
 	for i in range(len(items)):
 		if items[i] not in received_ids:
 			temp.append(items[i])
-
 	responses = []
 	read_ids = []
-
 	for emailid in temp:
 		resp, data = server.fetch(emailid, "(RFC822)") # fetching the mail, "`(RFC822)`" means "get the whole stuff", but you can ask for headers only, etc
 		email_body = data[0][1] # getting the mail content
 		message = email.message_from_string(email_body) # parsing the mail content to get a mail object
-
 		try:
-			response = parse_message(message)
-			if is_recent(response[1]):
-				responses.append(response)
+			review = parse_message(message)
+			if is_recent(review['date']):
+				responses.append(review)
 			read_ids.append(emailid)
 		except Exception as e:
-			print "~"*80+'\n'+"ERROR: failed to read user response with email id {}., Error text...{}\n".format(emailid, str(e))+"~"*80+"\nText below:\n\n{}".format(message.as_string())
-
+			print "~"*80+'\n'+"ERROR: failed to read user review with email id {}., Error text...{}\n".format(emailid, str(e))+"~"*80+"\nText below:\n\n{}".format(message.as_string())
 	with open(RECEIVEDFILE, 'w') as f:
 		pickle.dump(received_ids+read_ids, f)
-
-	return responses
-
-def log_responses(server):
-	responses = fetch_responses(server)
-	if responses:
-		list_of_minutes = [datetime2minutes(date) for (flash_id, date, correct) in responses]
-		write_times(list_of_minutes)
-		flashcardIO.daily_update({flash_id: correct for  (flash_id, date, correct) in responses})
+	reviews = {}
+	for r in responses:
+		if r['id'] not in reviews:
+			reviews[r['id']] = []
+		reviews[r['id']] += (r['datetime'], r['correct'])
+	return reviews
 
 time2index = lambda time: int(time//15)
 def indices2array(indices):
@@ -188,23 +178,32 @@ def indices2array(indices):
 		a[index]+=1
 	return a
 
-def write_times(list_of_minutes):
-	# write times that responses were received from the user into the file containing hourly probabilities
-	indices = np.array([time2index(time) for time in list_of_minutes])
-	new_indices = indices2array(indices)
+# def write_times(list_of_minutes):
+# 	# write times that responses were received from the user into the file containing hourly probabilities
+# 	indices = np.array([time2index(time) for time in list_of_minutes])
+# 	new_indices = indices2array(indices)
 
-	if not os.path.isfile(HOURLYFILE):
-		with open(HOURLYFILE,'w') as f:
-			pickle.dump([np.ones(24*4)])
-	with open(HOURLYFILE,'r') as f:
-		old_indices = pickle.load(f)
-	with open(HOURLYFILE,'w') as f:
-		try:
-			print 'times being written'
-			pickle.dump(np.append(old_indices, new_indices).reshape(old_indices.shape[0]+1, old_indices.shape[1]), f)
-		except ValueError:
-			print "Error: failure adding new response times to the data file %s." % HOURLYFILE
+# 	if not os.path.isfile(HOURLYFILE):
+# 		with open(HOURLYFILE,'w') as f:
+# 			pickle.dump([np.ones(24*4)])
+# 	with open(HOURLYFILE,'r') as f:
+# 		old_indices = pickle.load(f)
+# 	with open(HOURLYFILE,'w') as f:
+# 		try:
+# 			print 'times being written ...'
+# 			pickle.dump(np.append(old_indices, new_indices).reshape(old_indices.shape[0]+1, old_indices.shape[1]), f)
+# 			print '... done'
+# 		except ValueError:
+# 			print "Error: failure adding new response times to the data file %s." % HOURLYFILE
 
+def log_reviews(server):
+	reviews = fetch_reviews(server)
+	if reviews:
+		# list_of_minutes = [datetime2minutes(r['datetime']) for r in responses]
+		# write_times(list_of_minutes)
+		flashcardIO.daily_update(reviews)
+	else:
+		print "No reviews to collect as of", str(datetime.datetime.now())
 
 class Receive(threading.Thread):
 	def __init__(self, username, password):
@@ -223,10 +222,11 @@ class Receive(threading.Thread):
 			# wait until midnight
 			tmrw = datetime.datetime.now()+datetime.timedelta(1)
 			midnight = datetime.datetime(tmrw.year, tmrw.month, tmrw.day, 0, 0)
-			wait_until(midnight)
+			# wait_until(midnight)
+			wait_until(datetime.datetime.now()+datetime.timedelta(minutes = 30)) # take data after 30 minutes (TESTING purposes)
 
 			self.update_server()
-			log_responses(self.server)
+			log_reviews(self.server)
 
 
 if __name__=='__main__':

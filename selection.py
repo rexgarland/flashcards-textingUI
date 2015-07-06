@@ -14,7 +14,7 @@ from datetime import datetime
 import numpy as np
 import flashcardIO, pickle, os
 
-OCCURRENCEFILE = 'daily_frequencies.txt'
+OCCURRENCEFILE = 'tracked_files.txt'
 # hourly file must be a pickled list of tuples representing occurrences in 15 minute bins
 HOURLYFILE = 'hourly_probabilities.dat'
 # pickles a list of numpy arrays storing data on when responses are received from the user

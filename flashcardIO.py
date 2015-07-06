@@ -1,52 +1,38 @@
 """
-A module for calculating properties on flashcards.
-
-1) a simple class for flashcard
-	- fields: front, back, correct_count, incorrect_count, 
-		neglectedness
-
-2) a metric for flashcard difficulty
-	- includes counts
-
-3) a metric for necessity
-	- includes difficulty and days_old
-
-4) a method for rewriting a data file
-
+This module contains a simple Flashcard class and methods surrounding that class.
+Methods include reading flashcards from a file and writing metadata about those flashcards to a file.
+It also includes a method for updating metadata from a daily user responses (e.g. correct/incorrect count).
 """
 import selection
 import numpy as np
-import os, pickle
+import os, pickle, datetime
 
 METADATAFILE = 'metadata.dat'
+"""Metadata is a dict whose keys are flashcard ids and values are lists of reviews.
+Each review is a tuple (datetime, correct_boolean)."""
 
 class Flashcard(object):
 	def __init__(self, data):
 		self.text = data['text']
-		self.correct_count = data['correct_count']
-		self.incorrect_count = data['incorrect_count']
-		self.days_old = data['days_old']
+		self.reviews = data['reviews']
 		self.id = data['id']
 
-	def difficulty(self):
-		# returns difficulty as a result of correct/incorrect
-		# counts
-		total = self.correct_count+self.incorrect_count
-		return total*np.exp(float(self.incorrect_count-self.correct_count))+1
+	def correct_count(self):
+		return sum([i[1] for i in self.reviews])
 
-	def necessity(self):
-		# updates necessity by including difficulty and neglectedness
-		# TESTING: not a dynamic necessity function as of yet
-		return 1
+	def incorrect_count(self):
+		return len(self.reviews)-self.correct_count()
 
-	def metadata(self):
-		return (self.correct_count, self.incorrect_count, self.days_old)
+	def time_since_last(self):
+		"""Return datetime.timedelta for the time past since the last review of this card."""
+		return datetime.datetime.now()-max(self.reviews)[0]
 
 	def message(self):
-		# creates text to display when sending card to user
+		"""Return text to display when sending flashcard to user."""
 		return self.text[0]+'\n'*4+self.text[1]
 
 	def __str__(self):
+		"""Return text to write when writing flashcard to file."""
 		return self.text[0]+'\t'+self.text[1]+'\t'+str(self.id)
 
 def loadmetadata():
@@ -54,7 +40,13 @@ def loadmetadata():
 	if os.path.isfile(METADATAFILE):
 		with open(METADATAFILE, 'r') as f:
 			metadata = pickle.load(f)
+	else: # create new file
+		writemetadata(metadata)
 	return metadata
+
+def writemetadata(metadata):
+	with open(METADATAFILE, 'w') as metafile:
+			pickle.dump(metadata, metafile)
 
 def new_id(metadata):
 	# assign smallest available id
@@ -66,29 +58,39 @@ def new_id(metadata):
 				return i
 		return max(metadata)+1
 
-def line_to_flashcard(line, metadata):
+def isintstring(s):
+	try:
+		int(s)
+		return True
+	except:
+		return False
+
+def parse_line(line, metadata):
+	"""Parses a line from a flashcard data file (in the format front\tback[\tid]).
+	Returns a Flashcard instance from that line and updates the metadata to include the new id."""
 	split = line.strip().split('\t')
-	card = {}
-	if len(split)==2 or len(split)>3:
-		card['text'] = tuple(split)
-		card['correct_count'] = 0
-		card['incorrect_count'] = 0
-		card['days_old'] = 0
-		card['id'] = new_id(metadata)
-		metadata[card['id']] = (card['correct_count'], card['incorrect_count'], card['days_old'])
-	elif len(split)==3:
-		card['text'] = tuple(split[:2])
-		card['id'] = int(split[2])
-		card['correct_count'], card['incorrect_count'], card['days_old'] = metadata[card['id']]
+	data = {}
+	if len(split)==2:
+		data['text'] = tuple(split)
+		data['id'] = new_id(metadata)
+		data['reviews'] = []
+	elif len(split)==3 and isintstring(split[2]):
+		data['text'] = tuple(split[:2])
+		data['id'] = int(split[2])
+		if data['id'] not in metadata:
+			data['id'] = new_id(metadata)
+			data['reviews'] = []
+		else:
+			data['reviews'] = metadata[data['id']]
 	else:
 		raise Exception
-	return Flashcard(card), metadata
+	return Flashcard(data)
 
 def load(datafile):
-	# returns a list of flashcard instances
+	"""Returns a list of flashcard instances from a flashcard data file."""
 	buffer_file = open('buffer.txt','w')
 	read_file = open(datafile, 'r')
-	flashcards_dict = {}
+	flashcards = []
 
 	metadata = loadmetadata()
 
@@ -97,26 +99,27 @@ def load(datafile):
 	line_no = 0
 	for line in lines:
 		line_no += 1
-		if line[0]=='#':
+		if line.strip()[0]=='#':
 			buffer_file.write(line)
 			continue
-		if line=='\n':
+		if not line.strip():
 			continue
 		try:
-			current_card, metadata = line_to_flashcard(line, metadata)
+			card = parse_line(line, metadata)
+			if card.id not in metadata:
+				metadata[cardid] = []
 		except:
-			"Error: could not convert line %d of file '%s' to flashcard. Flashcard ignored." % (line_no, datafile)
+			"Error: could not convert line %d of file '%s' to flashcard." % (line_no, datafile)
 			buffer_file.write(line)
 			continue
 		change = True
-		flashcards_dict[current_card.id] = current_card
-		buffer_file.write(str(current_card)+'\n')
+		flashcards.append(card)
+		buffer_file.write(str(card)+'\n')
 
 	read_file.close()
 	buffer_file.close()
 
-	with open(METADATAFILE, 'w') as metafile:
-		pickle.dump(metadata, metafile)
+	writemetadata(metadata)
 
 	if change:
 		os.remove(datafile)
@@ -124,64 +127,73 @@ def load(datafile):
 	else:
 		os.remove('buffer.txt')
 
-	return flashcards_dict.values()
+	clear_old_metadata()
+	return flashcards
 
-def write_updated(flashcards_dict):
+def write_update(metadata_update):
+	"""Writes metadata update to metadata file."""
 	metadata = loadmetadata()
+	for cardid in metadata_update:
+		if cardid not in metadata:
+			metadata[cardid] = []
+		metadata[cardid] += metadata_update[cardid]
+	writemetadata(metadata)
 
-	for cardid in flashcards_dict:
-		metadata[cardid] = flashcards_dict[cardid].metadata()
-
-	with open(METADATAFILE, 'w') as metafile:
-		pickle.dump(metadata, metafile)
-
-def clean_metadata():
-	ids = []
+def clear_old_metadata():
+	"""Clears metadata from flashcards which are no longer located in the tracked files."""
+	cardids = []
 	for filename in selection.find_files():
-		ids.extend([flashcard.id for flashcard in load(filename)])
+		cardids += [flashcard.id for flashcard in load(filename)]
 	metadata = loadmetadata()
 	new_metadata = {}
-	for id in ids:
-		if id in metadata:
-			new_metadata[id] = metadata[id]
-	with open(METADATAFILE, 'w') as metafile:
-		pickle.dump(new_metadata, metafile)
+	for cardid in cardids:
+		if cardid in metadata:
+			new_metadata[cardid] = metadata[cardid]
+	writemetadata(new_metadata)
 
 def clear_metadata(filename):
+	"""Clears the metadata associated with flashcards in the file "filename"."""
 	metadata = loadmetadata()
+	buffer_file = open('buffer.txt','w')
 	with open(filename, 'r') as f:
 		lines = f.readlines()
+	line_changes = []
 	line_no = 0
 	for line in lines:
 		line_no += 1
-		split = line.strip().split('\t')
-		if len(split)==3:
-			try:
-				del metadata[int(split[2])]
-				buffer_file.write(split[0]+'\t'+split[1]+'\n')
-			except:
-				print "Error: could not read id from line %d in file '%s'." % (line_no, filename)
-		else:
+		if not line.strip() or line.strip()[0]=='#'
 			buffer_file.write(line)
+			continue
+		split = line.strip().split('\t')
+		if len(split)==3 and isintstring(split[2]):
+			cardid = int(split[2])
+			if cardid in metadata:
+				del metadata[cardid]
+		newline = split[0]+'\t'+split[1]+'\n'
+		buffer_file.write(newline)
+		if line!=newline:
+			changes.append( (line_no, line, newline) )
 	buffer_file.close()
-	with open(METADATAFILE, 'w') as metafile:
-		pickle.dump(metadata, metafile)
-	with open(filename, 'r') as f:
-		lines = f.readlines()
-	clean_metadata()
+	print "The following lines will be replaced:"
+	for line_change in line_changes:
+		print line_no, '-\t'+line_change[1]
+		print line_no, '+\t'+line_change[2]
+	answer = raw_input('\nContinue? ([y]/n)')
+	if answer=='y' or not answer:
+		os.remove(filename)
+		os.rename('buffer.txt', filename)
+		print "File '%s' was replaced." % filename
+	writemetadata(metadata)
 
-def daily_update(updates_dict):
-	"""updates_dict is a dict of flashcard ids and corresponding "correct" 
-	booleans"""
+def daily_update(reviews):
+	"""Updates metadata after user responses have been received.
+	Metadata: {flash_card_id: list_of_reviews}"""
 	for filename in selection.find_files():
-		cards = {}
+		metadata = {}
 		for card in load(filename):
-			if card.id in updates_dict:
-				card.correct_count +=  int(updates_dict[card.id])
-				card.incorrect_count +=  int(not updates_dict[card.id])
-				card.days_old = 0
-				cards[card.id] = card
-			else:
-				card.days_old += 1
-				cards[card.id] = card
-		write_updated(cards)
+			if card.id in reviews:
+				if card.id not in metadata:
+					metadata[card.id] = []
+				metadata[card.id] += reviews[card.id]
+		if metadata:
+			write_update(metadata)
