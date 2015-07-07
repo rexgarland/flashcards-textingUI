@@ -16,7 +16,6 @@ import os, re, threading, pickle
 import time, datetime, dateutil
 import numpy as np
 
-HOURLYFILE = 'hourly_probabilities.dat'
 RECEIVEDFILE = 'received.dat'
 
 def create_message(card):
@@ -177,24 +176,6 @@ def indices2array(indices):
 	for index in indices:
 		a[index]+=1
 	return a
-
-# def write_times(list_of_minutes):
-# 	# write times that responses were received from the user into the file containing hourly probabilities
-# 	indices = np.array([time2index(time) for time in list_of_minutes])
-# 	new_indices = indices2array(indices)
-
-# 	if not os.path.isfile(HOURLYFILE):
-# 		with open(HOURLYFILE,'w') as f:
-# 			pickle.dump([np.ones(24*4)])
-# 	with open(HOURLYFILE,'r') as f:
-# 		old_indices = pickle.load(f)
-# 	with open(HOURLYFILE,'w') as f:
-# 		try:
-# 			print 'times being written ...'
-# 			pickle.dump(np.append(old_indices, new_indices).reshape(old_indices.shape[0]+1, old_indices.shape[1]), f)
-# 			print '... done'
-# 		except ValueError:
-# 			print "Error: failure adding new response times to the data file %s." % HOURLYFILE
 
 def log_reviews(server):
 	reviews = fetch_reviews(server)

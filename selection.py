@@ -100,7 +100,7 @@ def find_card_frequencies():
 	datafile.close()
 	return occurrences
 
-def find_files():
+def tracked_files():
 	return find_card_frequencies().keys()
 
 datetime2index = lambda dt: dt.hour*4+dt.minute//15

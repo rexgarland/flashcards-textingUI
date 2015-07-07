@@ -5,7 +5,7 @@ It also includes a method for updating metadata from a daily user responses (e.g
 """
 import selection
 import numpy as np
-import os, pickle, datetime
+import os, pickle, datetime, time
 
 METADATAFILE = 'metadata.dat'
 """Metadata is a dict whose keys are flashcard ids and values are lists of reviews.
@@ -38,10 +38,12 @@ class Flashcard(object):
 def loadmetadata():
 	metadata = {}
 	if os.path.isfile(METADATAFILE):
-		with open(METADATAFILE, 'r') as f:
-			metadata = pickle.load(f)
+		with open(METADATAFILE, 'r') as metafile:
+			metadata = pickle.load(metafile)
 	else: # create new file
 		writemetadata(metadata)
+		for filename in selection.tracked_files():
+			clear_metadata(filename)
 	return metadata
 
 def writemetadata(metadata):
@@ -70,64 +72,27 @@ def parse_line(line, metadata):
 	Returns a Flashcard instance from that line and updates the metadata to include the new id."""
 	split = line.strip().split('\t')
 	data = {}
-	if len(split)==2:
-		data['text'] = tuple(split)
-		data['id'] = new_id(metadata)
-		data['reviews'] = []
-	elif len(split)==3 and isintstring(split[2]):
-		data['text'] = tuple(split[:2])
-		data['id'] = int(split[2])
-		if data['id'] not in metadata:
-			data['id'] = new_id(metadata)
-			data['reviews'] = []
-		else:
-			data['reviews'] = metadata[data['id']]
-	else:
-		raise Exception
+	data['text'] = tuple(split[:2])
+	data['id'] = int(split[2])
+	data['reviews'] = metadata[data['id']]
 	return Flashcard(data)
 
 def load(datafile):
-	"""Returns a list of flashcard instances from a flashcard data file."""
-	buffer_file = open('buffer.txt','w')
-	read_file = open(datafile, 'r')
-	flashcards = []
-
+	"""Returns a list of flashcard instances from a flashcard data file.
+	When card id's are added to the flashcard file, the user is notified with the changes before the file is updated."""
+	biject_db() # add flashcard ids to lines without one
+	with open(datafile, 'r') as f:
+		lines = f.readlines()
 	metadata = loadmetadata()
-
-	change = False
-	lines = read_file.readlines()
-	line_no = 0
+	flashcards = []
 	for line in lines:
-		line_no += 1
-		if line.strip()[0]=='#':
-			buffer_file.write(line)
-			continue
-		if not line.strip():
+		if line.strip()[0]=='#' or not line.strip():
 			continue
 		try:
 			card = parse_line(line, metadata)
-			if card.id not in metadata:
-				metadata[cardid] = []
 		except:
-			"Error: could not convert line %d of file '%s' to flashcard." % (line_no, datafile)
-			buffer_file.write(line)
-			continue
-		change = True
-		flashcards.append(card)
-		buffer_file.write(str(card)+'\n')
-
-	read_file.close()
-	buffer_file.close()
-
-	writemetadata(metadata)
-
-	if change:
-		os.remove(datafile)
-		os.rename('buffer.txt', datafile)
-	else:
-		os.remove('buffer.txt')
-
-	clear_old_metadata()
+			print "Error: bijection failed from metadata ids to written ids."
+		flashcards += [card]
 	return flashcards
 
 def write_update(metadata_update):
@@ -139,56 +104,169 @@ def write_update(metadata_update):
 		metadata[cardid] += metadata_update[cardid]
 	writemetadata(metadata)
 
-def clear_old_metadata():
-	"""Clears metadata from flashcards which are no longer located in the tracked files."""
-	cardids = []
-	for filename in selection.find_files():
-		cardids += [flashcard.id for flashcard in load(filename)]
+def fetch_file(cardid):
+	target_files = []
+	for filename in selection.tracked_files():
+		if cardid in get_ids(filename):
+			target_files += [filename]
+	assert len(target_files)<=1, "multiple files contain card id {}:\n{}".format(cardid, target_files)
+	if target_files:
+		return target_files[0]
+	else:
+		return None
+
+def fetch_card(cardid):
 	metadata = loadmetadata()
-	new_metadata = {}
-	for cardid in cardids:
-		if cardid in metadata:
-			new_metadata[cardid] = metadata[cardid]
-	writemetadata(new_metadata)
+	target_file = fetch_file(cardid)
+	if target_file:
+		with open(target_file, 'r') as f:
+			lines = f.readlines()
+		for line in lines:
+			split = line.strip().split('\t')
+			if len(split)==3 and isintstring(split[2]):
+				if cardid==int(split[2]):
+					return parse_line(line, metadata)
+	else:
+		return None
+
+def get_ids(filename):
+	cardids = []
+	with open(filename, 'r') as f:
+		lines = f.readlines()
+	for line in lines:
+		split = line.strip().split('\t')
+		if len(split)==3 and isintstring(split[2]):
+			cardids.append(int(split[2]))
+	return cardids
+
+def written_ids():
+	cardids = []
+	for filename in selection.tracked_files():
+		cardids += get_ids(filename)
+	return cardids
 
 def clear_metadata(filename):
 	"""Clears the metadata associated with flashcards in the file "filename"."""
 	metadata = loadmetadata()
-	buffer_file = open('buffer.txt','w')
 	with open(filename, 'r') as f:
 		lines = f.readlines()
-	line_changes = []
-	line_no = 0
+	new_lines = []
 	for line in lines:
-		line_no += 1
-		if not line.strip() or line.strip()[0]=='#'
-			buffer_file.write(line)
-			continue
-		split = line.strip().split('\t')
-		if len(split)==3 and isintstring(split[2]):
-			cardid = int(split[2])
-			if cardid in metadata:
-				del metadata[cardid]
-		newline = split[0]+'\t'+split[1]+'\n'
-		buffer_file.write(newline)
-		if line!=newline:
-			changes.append( (line_no, line, newline) )
-	buffer_file.close()
-	print "The following lines will be replaced:"
-	for line_change in line_changes:
-		print line_no, '-\t'+line_change[1]
-		print line_no, '+\t'+line_change[2]
-	answer = raw_input('\nContinue? ([y]/n)')
-	if answer=='y' or not answer:
-		os.remove(filename)
-		os.rename('buffer.txt', filename)
-		print "File '%s' was replaced." % filename
-	writemetadata(metadata)
+		if not line.strip() or line.strip()[0]=='#':
+			new_lines += [line]
+		else:
+			split = line.strip().split('\t')
+			if has_id(line):
+				cardid = int(split[2])
+				if cardid in metadata:
+					del metadata[cardid]
+				new_lines += ['\t'.join(split[:2])+'\n']
+			else:
+				new_lines += ['\t'.join(split[:2])+'\n']
+	if lines!=new_lines:
+		print "The following lines of '%s' will be rewritten:\n" % filename
+		assert len(lines)==len(new_lines), "lines from the original file do not correspond to those in the rewrite file"
+		for (line, new_line) in zip(lines, new_lines):
+			if line!=new_line:
+				print '-\t'+line.strip()
+				print '+\t'+new_line.strip()
+		print "Continue file rewrite? (ctrl-C to abort within 3 seconds...)"
+		try:
+			time.sleep(3)
+			replace = True
+		except KeyboardInterrupt:
+			replace = False
+		if replace:
+			write_lines(new_lines, filename)
+			print "File '%s' was rewritten." % filename
+			writemetadata(metadata)
+		else:
+			print "File rewrite of '%s' aborted. No changed made." % filename
+
+def clear_old_metadata(metadata):
+	"""Clears metadata from flashcards which are no longer located in the tracked files."""
+	new_metadata = {}
+	cardids = written_ids()
+	for cardid in metadata:
+		if cardid in cardids:
+			new_metadata[cardid] = metadata[cardid]
+	return new_metadata
+
+def write_lines(lines, filename):
+	with open(filename, 'w') as f:
+		for line in lines:
+			f.write(line)
+
+def has_id(line):
+	split = line.strip().split('\t')
+	if len(split)<3:
+		return False
+	elif isintstring(split[2]):
+		return True
+	else:
+		return False
+
+def biject_db():
+	"""Cleans the database of metadata to erase empty maps (leaving a bijection between ids and tracked lines).
+	It checks each written line to make sure each flashcard gets a unique id in metadata.
+	If there are multiple flashcards with the same id, the metadata associate with that id is deleted and they are assigned unique ids (i.e. flashcards are distinguished only by their id)."""
+	new_metadata = {}
+	metadata = clear_old_metadata(loadmetadata()) # clear maps to nonexistent lines: metadata now contains equal to or less than the number of ids written in files
+	for filename in selection.tracked_files():
+		new_lines = []
+		with open(filename, 'r') as f:
+			lines = f.readlines()
+		for line in lines:
+			if not has_id(line):
+				split = line.strip().split('\t')
+				if len(split)<2:
+					new_lines += [line]
+				else:
+					newid = new_id(metadata)
+					new_lines += [split[0]+'\t'+split[1]+'\t'+str(newid)+'\n']
+					new_metadata[newid] = []
+					metadata[newid] = []
+			else:
+				split = line.strip().split('\t')
+				written_id = int(split[2])
+				if written_id in new_metadata: # code optimized to utilize the fact that ids are ordered in metadata, not in written files
+					new_metadata[written_id] = [] # delete metadata associated with double-mapped ids
+					newid = new_id(metadata) # creates first new id possible given that all ids in metadata are mapped to at least one tracked flashcard already
+					new_metadata[newid] = []
+					metadata[newid] = []
+					new_lines += [split[0]+'\t'+split[1]+'\t'+str(newid)+'\n']
+				elif written_id in metadata:
+					new_metadata[written_id] = metadata[written_id]
+					new_lines += [line]
+				else:
+					newid = new_id(metadata)
+					new_metadata[newid] = []
+					metadata[newid] = []
+					new_lines += [split[0]+'\t'+split[1]+'\t'+str(newid)+'\n']
+		if lines!=new_lines:
+			print "The following lines of '%s' will be rewritten:\n" % filename
+			assert len(lines)==len(new_lines), "lines from the original file do not correspond to those in the rewrite file"
+			for (line, new_line) in zip(lines, new_lines):
+				if line!=new_line:
+					print '-\t'+line.strip()
+					print '+\t'+new_line.strip()
+			print "Continue file rewrite? (ctrl-C to abort within 3 seconds...)"
+			try:
+				time.sleep(3)
+				replace = True
+			except KeyboardInterrupt:
+				replace = False
+			if replace:
+				write_lines(new_lines, filename)
+				print "File '%s' was rewritten." % filename
+			else:
+				print "File rewrite of '%s' aborted. No changed made." % filename
+	writemetadata(new_metadata)
 
 def daily_update(reviews):
 	"""Updates metadata after user responses have been received.
 	Metadata: {flash_card_id: list_of_reviews}"""
-	for filename in selection.find_files():
+	for filename in selection.tracked_files():
 		metadata = {}
 		for card in load(filename):
 			if card.id in reviews:
@@ -197,3 +275,8 @@ def daily_update(reviews):
 				metadata[card.id] += reviews[card.id]
 		if metadata:
 			write_update(metadata)
+
+
+
+
+
