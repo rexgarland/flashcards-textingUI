@@ -95,15 +95,6 @@ def load(datafile):
 		flashcards += [card]
 	return flashcards
 
-def write_update(metadata_update):
-	"""Writes metadata update to metadata file."""
-	metadata = loadmetadata()
-	for cardid in metadata_update:
-		if cardid not in metadata:
-			metadata[cardid] = []
-		metadata[cardid] += metadata_update[cardid]
-	writemetadata(metadata)
-
 def fetch_file(cardid):
 	target_files = []
 	for filename in selection.tracked_files():
@@ -266,17 +257,12 @@ def biject_db():
 def daily_update(reviews):
 	"""Updates metadata after user responses have been received.
 	Metadata: {flash_card_id: list_of_reviews}"""
-	for filename in selection.tracked_files():
-		metadata = {}
-		for card in load(filename):
-			if card.id in reviews:
-				if card.id not in metadata:
-					metadata[card.id] = []
-				metadata[card.id] += reviews[card.id]
-		if metadata:
-			write_update(metadata)
-
-
+	metadata = loadmetadata()
+	for cardid in reviews:
+		if cardid not in metadata:
+			metadata[cardid] = []
+		metadata[cardid] += reviews[cardid]
+	writemetadata(metadata)
 
 
 

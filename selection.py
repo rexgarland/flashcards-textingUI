@@ -66,38 +66,32 @@ def select_cards():
 	total_cards = []
 	for filename in occurrences:
 		number = occurrences[filename]
-		if number<=0 or number == None:
-			continue
-		cards = flashcardIO.load(filename)
-		if cards:
-			weights = []
-			for index, card in enumerate(cards):
-				weights.append((index, card.necessity()))
-			xk, pk = zip(*weights)
-			pk = np.array(pk); pk = normalize(pk)
-			xk = list(xk)
-			R = rv_discrete(size=number, values=xk, weights=pk)
-			total_cards += [cards[index] for index in R]
+		if number>0:
+			cards = flashcardIO.load(filename)
+			assert cards
+			total_cards += [cards[index] for index in np.random.random_integers(0, len(cards)-1, number)]
 	return total_cards
 
+def isintstring(s):
+	try:
+		int(s)
+		return True
+	except:
+		return False
+
 def find_card_frequencies():
-	datafile = open(OCCURRENCEFILE,'r')
 	occurrences = {}
-	while True:
-		try:
-			line = datafile.next()
-			if line[0]=='#' or line=='\n':
-				continue
-			data = line.strip().split('\t')
-			filename = data[0].strip(); number = int(data[1].strip())
-			occurrences[filename] = number
-		except StopIteration:
-			break
-		except:
-			print "Error: could not read '%s' file to read flashcard set occurrences." % OCCURRENCEFILE
-			datafile.close()
-			exit()
-	datafile.close()
+	with open(OCCURRENCEFILE, 'r') as f:
+		lines = f.readlines()
+	for line in lines:
+		if line[0]=='#' or not line.strip():
+			continue
+		split = line.strip().split('\t')
+		filename = split[0].strip()
+		if isintstring(split[1]) and os.path.isfile(filename):
+			occurrences[filename] = int(split[1].strip())
+		else:
+			continue
 	return occurrences
 
 def tracked_files():
@@ -113,22 +107,23 @@ def index2random_datetime(index):
 
 def select_times(total_number, until=MIDNIGHT):
 	# selects times during the day to test total_number cards (now until the "until" variable)
-	if not os.path.isfile(HOURLYFILE):
-		with open(HOURLYFILE,'w') as f:
-			pickle.dump([np.ones(24*4)], f)
-	with open(HOURLYFILE, 'r') as datafile:
-		data = pickle.load(datafile)
-		if not data:
-			data = [np.ones(24*4)]
-	# data is weighted exponentially to decrease with days past
-	weights = reduce(lambda x,y: FORGETTING_RATE*x+y, data)
-	now = datetime2index(datetime.today())
-	for index in range(len(weights)):
-		if index<=now or index>until:
-			weights[index]=0
-	weights = normalize(weights)
-	R = rv_discrete(size=total_number, values=range(24*4), weights=weights)
-	return [index2random_datetime(item) for item in R]
+	# if not os.path.isfile(HOURLYFILE):
+	# 	with open(HOURLYFILE,'w') as f:
+	# 		pickle.dump([np.ones(24*4)], f)
+	# with open(HOURLYFILE, 'r') as datafile:
+	# 	data = pickle.load(datafile)
+	# 	if not data:
+	# 		data = [np.ones(24*4)]
+	# # data is weighted exponentially to decrease with days past
+	# weights = reduce(lambda x,y: FORGETTING_RATE*x+y, data)
+	# now = datetime2index(datetime.today())
+	# for index in range(len(weights)):
+	# 	if index<=now or index>until:
+	# 		weights[index]=0
+	# weights = normalize(weights)
+	# R = rv_discrete(size=total_number, values=range(24*4), weights=weights)
+	# return [index2random_datetime(item) for item in R]
+	return [index2random_datetime(index) for index in np.random.random_integers(0, until, total_number)]
 
 def schedule(time_forward=None):
 	# returns a list of events, each event being a tuple with flashcard and time
@@ -142,7 +137,6 @@ def schedule(time_forward=None):
 		return sorted(zip(cards, times), key = lambda item: item[1])
 	else:
 		return []
-
 
 if __name__=='__main__':
 	print [str(t) for t in select_times(10, until=datetime2index(datetime.today())+1)]
