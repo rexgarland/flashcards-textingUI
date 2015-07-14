@@ -89,9 +89,9 @@ class Send(threading.Thread):
 				except:
 					print "Error for event: '%s'." % str(event[0])
 			# wait until a little after midnight to restart (this gives the Receive thread time to update received data)
-			delay_seconds = 30
+			delay_minutes = 2
 			tmrw = datetime.datetime.now()+datetime.timedelta(days=1)
-			midnight = datetime.datetime(tmrw.year, tmrw.month, tmrw.day, 0, 0, delay_seconds)
+			midnight = datetime.datetime(tmrw.year, tmrw.month, tmrw.day, 0, delay_minutes, 0)
 			wait_until(midnight)
 
 def pctoffset_from_string(s):
