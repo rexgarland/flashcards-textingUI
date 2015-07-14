@@ -171,7 +171,7 @@ def get_log_dict():
 		assert type(log_dict) is dict
 	except:
 		# set initial last_update to a year ago
-		log_dict = {'last_update': datetime.datetime.now()-datetime.timedelta(days=365), 'received_ids' = []}
+		log_dict = {'last_update': datetime.datetime.now()-datetime.timedelta(days=365), 'received_ids': []}
 	try:
 		assert type(log_dict['last_update']) is datetime.datetime
 	except:
