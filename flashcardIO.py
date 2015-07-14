@@ -254,7 +254,7 @@ def biject_db():
 				print "File rewrite of '%s' aborted. No changed made." % filename
 	writemetadata(new_metadata)
 
-def daily_update(reviews):
+def update_reviews(reviews):
 	"""Updates metadata after user responses have been received.
 	Metadata: {flash_card_id: list_of_reviews}"""
 	metadata = loadmetadata()
@@ -263,6 +263,19 @@ def daily_update(reviews):
 			metadata[cardid] = []
 		metadata[cardid] += reviews[cardid]
 	writemetadata(metadata)
+
+def update_cards(card_updates):
+	"""Adds new cards to tracked files.
+	"card_updates" is a dict {filename: cards}, where each element of cards is a tuple (front_text, back_text).
+	This method does not resolve duplicate cards within the dict or within the filename."""
+	tracked_filenames = selection.tracked_files()
+	for filename in card_updates:
+		if filename in tracked_filenames:
+			append_lines = [card[0]+'\t'+card[1]+'\n' for card in card_updates[filename]]
+			with open(filename,'a') as f:
+				f.writelines(append_lines)
+	biject_db()
+
 
 
 

@@ -106,27 +106,43 @@ def pctoffset_from_string(s):
 	offsetminutes = minutes
 	return datetime.timedelta(hours = offsethours, minutes = offsetminutes)
 
-def parse_message(message):
-	s = message.as_string()
-	regex = re.compile(r'.*?Subject: RE: (?P<id>[0-9]*).*?[\n\r]{2,4}(?P<correct>.*?)[\n\r]{2,4}', re.DOTALL|re.UNICODE)
-	match = regex.match(s).groupdict()
-	d = message.values()[message.keys().index('Date')]
-	try:
-		date = datetime.datetime.strptime(d[:-6], '%a, %d %b %Y %H:%M:%S')
-		# move to PCT timezone
-		date = date + pctoffset_from_string(d[-5:])
-	except:
-		date = None
-	text = match['correct'].strip()
-	if text.lower()[0]=='y':
-		correct=True
-	elif text.lower()[0]=='n':
-		correct=False
+def parse_message(message, type='review'):
+	"""Returns parsed data of user information from an email message.
+	For review-type messages, the returned data is a dict of the review.
+	For add_cards-type messages, the returned data is a tuple (filename, cards), where cards are separated by newlines and back/front text separated by '--' in the user's message."""
+	assert type=='review' or type=='add_cards', "parse_message not given valid type of message (either review or add_cards)."
+	if type=='review':
+		s = message.as_string()
+		regex = re.compile(r'.*?Subject: RE: (?P<id>[0-9]*).*?[\n\r]{2,4}(?P<correct>.*?)[\n\r]{2,4}', re.DOTALL|re.UNICODE)
+		match = regex.match(s).groupdict()
+		d = message.values()[message.keys().index('Date')]
+		try:
+			date = datetime.datetime.strptime(d[:-6], '%a, %d %b %Y %H:%M:%S')
+			# move to PCT timezone
+			date = date + pctoffset_from_string(d[-5:])
+		except:
+			date = None
+		text = match['correct'].strip()
+		if text.lower()[0]=='y':
+			correct=True
+		elif text.lower()[0]=='n':
+			correct=False
+		else:
+			correct = None
+		return {'datetime': date, 'correct': correct}
 	else:
-		correct = None
-	return {'datetime': date, 'correct': correct}
+		s = str(message.get_payload()[0].get_payload()[0]).replace('\r','')
+		regex = re.compile(r'.*?\<td\>(?P<body>.*?)\</td\>', re.DOTALL|re.UNICODE)
+		body = regex.match(s).groupdict()['body'].strip()
+		lines = body.split('\n')
+		filename = lines[0].strip()
+		cards = [tuple(line.split('--')) for line in lines[1:]]
+		return filename, cards
+
 
 def message_from_id(emailid, imapserver):
+	"""Returns the message string from an email with email id "emailid" on server "imapserver"."""
+	imapserver.select("INBOX")
 	resp, data = imapserver.fetch(str(emailid), "(RFC822)") # fetching the mail, "`(RFC822)`" means "get the whole stuff", but you can ask for headers only, etc
 	email_body = data[0][1] # get the mail content
 	return email.message_from_string(email_body) # parsing the mail content to get a mail object
@@ -138,42 +154,85 @@ def isintstring(s):
 	except:
 		return False
 
-def fetch_reviews(server):
-	"""Returns a dictionary of reviews {flashcard_id: reviews}.
-	Reviews is a list of tuples (datetime, correct?)"""
+def get_new_email_ids(server):
+	"""Returns a list of email ids of emails on the imap server "server" from my cellphone that haven't been fetched yet."""
 	server.select("INBOX")
 	with open(RECEIVEDFILE, 'r') as f:
 		log_dict = pickle.load(f)
 	if 'last_update' in log_dict:
 		last_update = datetime.datetime.strftime(log_dict['last_update'], '%d-%b-%Y')
-		resp, items = server.search(None, 'FROM', '"3109244701.txt.att.net"', 'SINCE', last_update) # you could filter using the IMAP rules here (check http://www.example-code.com/csharp/imap-search-critera.asp)
+		resp, items1 = server.search(None, 'FROM', '"3109244701@txt.att.net"', 'SINCE', last_update) # you could filter using the IMAP rules here (check http://www.example-code.com/csharp/imap-search-critera.asp)
+		resp, items2 = server.search(None, 'FROM', '"3109244701@mms.att.net"', 'SINCE', last_update)
+		items = items1[0].split() + items2[0].split()
 	else:
-		resp, items = server.search(None, 'FROM', '"3109244701.txt.att.net"')
-	log_dict['last_update'] = datetime.datetime.now()
-	items = items[0].split() # get the mails id
+		resp, items1 = server.search(None, 'FROM', '"3109244701@txt.att.net"')
+		resp, items2 = server.search(None, 'FROM', '"3109244701@mms.att.net"')
+		items = items1[0].split() + items2[0].split()
 	if 'received_ids' not in log_dict:
 		log_dict['received_ids'] = []
-	new_email_ids = [item for item in items if item not in log_dict['received_ids']] # only consider emails that haven't been checked
-	responses = []
-	for emailid in new_email_ids:
-		message = message_from_id(emailid, server)
-		number = message.values()[message.keys().index('Subject')].strip('RE: ')
-		if isintstring(number):
-			try:
-				review = parse_message(message)
-				assert review['datetime'] and review['correct']
-				responses += [(int(number), review)]
-				log_dict['received_ids'] += [emailid]
-			except Exception as e:
-				print "~"*80+'\n'+"ERROR: failed to read user review with email id {}., Error text...{}\n".format(emailid, str(e))+"~"*80+"\nText below:\n\n{}".format(message.as_string())
+	return [item for item in items if item not in log_dict['received_ids']] # only consider emails that haven't been checked
+
+def write_read_email_ids(emailids):
+	"""Records a list of email ids "emailids" that have been fetched and read."""
+	with open(RECEIVEDFILE, 'r') as f:
+		log_dict = pickle.load(f)
+	if 'received_ids' not in log_dict:
+		log_dict['received_ids'] = []
+	for emailid in emailids:
+		if str(emailid) not in log_dict['received_ids']:
+			log_dict['received_ids'] += [str(emailid)]
 	with open(RECEIVEDFILE, 'w') as f:
 		pickle.dump(log_dict, f)
+
+def fetch_reviews(server):
+	"""Returns a dictionary of reviews {flashcard_id: reviews}.
+	Reviews is a list of tuples (datetime, correct?)"""
+	new_email_ids = get_new_email_ids(server)
+	responses = []
+	read_ids = []
+	for emailid in new_email_ids:
+		message = message_from_id(emailid, server)
+		cardid = message.values()[message.keys().index('Subject')].strip('RE: ')
+		if isintstring(cardid):
+			try:
+				review = parse_message(message, type='review')
+				assert review['datetime'] and review['correct']
+				responses += [(int(cardid), review)]
+				read_ids += [emailid]
+			except Exception as e:
+				print "~"*80+'\n'+"ERROR: failed to read user review with email id {}., Error text...{}\n".format(emailid, e)+"~"*80+"\nText below:\n\n{}".format(message)
+	write_read_email_ids(read_ids)
 	reviews = {}
 	for r in responses:
 		if r[0] not in reviews:
 			reviews[r[0]] = []
 		reviews[r[0]] += [(r[1]['datetime'], r[1]['correct'])]
 	return reviews
+
+def fetch_new_cards(server):
+	"""Fetches responses from the server that contain flashcard additions from the user.
+	Flashcard additions are signaled in the user's text message by prefixing the text message with a filename on the first line.
+	Returns a card_updates dict {filename: cards}, where cards is a list of tuples (front_text, back_text)."""
+	valid_filenames = selection.tracked_files()
+	new_email_ids = get_new_email_ids(server)
+	update_cards = {}
+	read_ids = []
+	for emailid in new_email_ids:
+		message = message_from_id(emailid, server)
+		if 'Subject' not in message.keys(): # email threads initiated by a cellphone will not have a subject line
+			try:
+				filename, cards = parse_message(message, type='add_cards')
+				if os.path.isfile(filename):
+					if filename not in update_cards:
+						update_cards[filename] = []
+					update_cards[filename] += cards
+					read_ids += [emailid]
+				else:
+					print "Error: filename '{}' is not in tracked files. Information in email with email id {} not logged.".format(filename, emailid)
+			except Exception as e:
+				print "~"*80+'\n'+"ERROR: failed to read user cards in email with email id {}., Error text...{}\n".format(emailid, e)+"~"*80+"\nText below:\n\n{}".format(message)
+	write_read_email_ids(read_ids)
+	return update_cards
 
 time2index = lambda time: int(time//15)
 def indices2array(indices):
@@ -182,9 +241,19 @@ def indices2array(indices):
 		a[index]+=1
 	return a
 
-def log_reviews(server):
+def write_log_time(last_update):
+	with open(RECEIVEDFILE, 'r') as f:
+		log_dict = pickle.load(f)
+	log_dict['last_update'] = last_update
+	with open(RECEIVEDFILE, 'w') as f:
+		pickle.dump(log_dict, f)
+
+def log(server):
 	reviews = fetch_reviews(server)
-	flashcardIO.daily_update(reviews)
+	flashcardIO.update_reviews(reviews)
+	card_updates = fetch_new_cards(server)
+	flashcardIO.update_cards(card_updates)
+	write_log_time(datetime.datetime.now())
 
 class Receive(threading.Thread):
 	def __init__(self, username, password):
@@ -198,7 +267,6 @@ class Receive(threading.Thread):
 		self.server = imaplib.IMAP4_SSL("imap.gmail.com")
 		self.server.login(self.username, self.password)
 
-
 	def run(self):
 		while self.abort==False:
 			tmrw = datetime.datetime.now()+datetime.timedelta(1)
@@ -209,7 +277,7 @@ class Receive(threading.Thread):
 			except:
 				print "Error: smtp authentication failed. Check login information."
 				self.abort = True
-			log_reviews(self.server)
+			log(self.server)
 
 if __name__=='__main__':
 	USERNAME = 'rex.garland'
