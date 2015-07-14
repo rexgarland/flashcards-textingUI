@@ -139,7 +139,6 @@ def parse_message(message, type='review'):
 		cards = [tuple(line.split('--')) for line in lines[1:]]
 		return filename, cards
 
-
 def message_from_id(emailid, imapserver):
 	"""Returns the message string from an email with email id "emailid" on server "imapserver"."""
 	imapserver.select("INBOX")
@@ -149,40 +148,67 @@ def message_from_id(emailid, imapserver):
 
 def isintstring(s):
 	try:
+		assert type(s) is str
 		int(s)
 		return True
 	except:
 		return False
 
+def isemailidlist(l):
+	if type(l) is not list:
+		return False
+	else:
+		if not all([(len(str(s))==4 and isintstring(s)) for s in l]):
+			return False
+		else:
+			return True
+
+def get_log_dict():
+	"""Method for loading the log dict. Returns the log dict with guaranteed 'last_update' and 'received_ids' elements."""
+	try:
+		with open(RECEIVEDFILE, 'r') as f:
+			log_dict = pickle.load(f)
+		assert type(log_dict) is dict
+	except:
+		# set initial last_update to a year ago
+		log_dict = {'last_update': datetime.datetime.now()-datetime.timedelta(days=365), 'received_ids' = []}
+	try:
+		assert type(log_dict['last_update']) is datetime.datetime
+	except:
+		log_dict['last_update'] = datetime.datetime.now()-datetime.timedelta(days=365)
+	if not isemailidlist(log_dict['received_ids']):
+		log_dict['received_ids'] = []
+	return log_dict
+
+def write_log_dict(log_dict):
+	assert type(log_dict) is dict
+	assert isemailidlist(log_dict['received_ids'])
+	assert type(log_dict['last_update']) is datetime.datetime
+	with open(RECEIVEDFILE, 'w') as f:
+		pickle.dump(log_dict, f)
+
 def get_new_email_ids(server):
 	"""Returns a list of email ids of emails on the imap server "server" from my cellphone that haven't been fetched yet."""
 	server.select("INBOX")
-	with open(RECEIVEDFILE, 'r') as f:
-		log_dict = pickle.load(f)
-	if 'last_update' in log_dict:
-		last_update = datetime.datetime.strftime(log_dict['last_update'], '%d-%b-%Y')
-		resp, items1 = server.search(None, 'FROM', '"3109244701@txt.att.net"', 'SINCE', last_update) # you could filter using the IMAP rules here (check http://www.example-code.com/csharp/imap-search-critera.asp)
-		resp, items2 = server.search(None, 'FROM', '"3109244701@mms.att.net"', 'SINCE', last_update)
-		items = items1[0].split() + items2[0].split()
-	else:
-		resp, items1 = server.search(None, 'FROM', '"3109244701@txt.att.net"')
-		resp, items2 = server.search(None, 'FROM', '"3109244701@mms.att.net"')
-		items = items1[0].split() + items2[0].split()
-	if 'received_ids' not in log_dict:
-		log_dict['received_ids'] = []
+	log_dict = get_log_dict()
+	last_update = datetime.datetime.strftime(log_dict['last_update'], '%d-%b-%Y')
+	resp, items1 = server.search(None, 'FROM', '"3109244701@txt.att.net"', 'SINCE', last_update) # you could filter using the IMAP rules here (check http://www.example-code.com/csharp/imap-search-critera.asp)
+	resp, items2 = server.search(None, 'FROM', '"3109244701@mms.att.net"', 'SINCE', last_update)
+	items = items1[0].split() + items2[0].split()
 	return [item for item in items if item not in log_dict['received_ids']] # only consider emails that haven't been checked
 
 def write_read_email_ids(emailids):
 	"""Records a list of email ids "emailids" that have been fetched and read."""
-	with open(RECEIVEDFILE, 'r') as f:
-		log_dict = pickle.load(f)
-	if 'received_ids' not in log_dict:
-		log_dict['received_ids'] = []
+	log_dict = get_log_dict()
 	for emailid in emailids:
 		if str(emailid) not in log_dict['received_ids']:
 			log_dict['received_ids'] += [str(emailid)]
-	with open(RECEIVEDFILE, 'w') as f:
-		pickle.dump(log_dict, f)
+	write_log_dict(log_dict)
+
+def write_log_time(last_update):
+	log_dict = get_log_dict()
+	log_dict['last_update'] = last_update
+	write_log_dict(log_dict)
 
 def fetch_reviews(server):
 	"""Returns a dictionary of reviews {flashcard_id: reviews}.
@@ -192,15 +218,16 @@ def fetch_reviews(server):
 	read_ids = []
 	for emailid in new_email_ids:
 		message = message_from_id(emailid, server)
-		cardid = message.values()[message.keys().index('Subject')].strip('RE: ')
-		if isintstring(cardid):
-			try:
-				review = parse_message(message, type='review')
-				assert review['datetime'] and review['correct']
-				responses += [(int(cardid), review)]
-				read_ids += [emailid]
-			except Exception as e:
-				print "~"*80+'\n'+"ERROR: failed to read user review with email id {}., Error text...{}\n".format(emailid, e)+"~"*80+"\nText below:\n\n{}".format(message)
+		if 'Subject' in message.values(): # avoids email threads initiated by the cellphone (i.e. user input flashcards)
+			cardid = message.values()[message.keys().index('Subject')].strip('RE: ')
+			if isintstring(cardid):
+				try:
+					review = parse_message(message, type='review')
+					assert review['datetime'] and review['correct']
+					responses += [(int(cardid), review)]
+					read_ids += [emailid]
+				except Exception as e:
+					print "~"*80+'\n'+"ERROR: failed to read user review with email id {}., Error text...{}\n".format(emailid, e)+"~"*80+"\nText below:\n\n{}".format(message)
 	write_read_email_ids(read_ids)
 	reviews = {}
 	for r in responses:
@@ -226,9 +253,9 @@ def fetch_new_cards(server):
 					if filename not in update_cards:
 						update_cards[filename] = []
 					update_cards[filename] += cards
-					read_ids += [emailid]
 				else:
 					print "Error: filename '{}' is not in tracked files. Information in email with email id {} not logged.".format(filename, emailid)
+				read_ids += [emailid]
 			except Exception as e:
 				print "~"*80+'\n'+"ERROR: failed to read user cards in email with email id {}., Error text...{}\n".format(emailid, e)+"~"*80+"\nText below:\n\n{}".format(message)
 	write_read_email_ids(read_ids)
@@ -240,13 +267,6 @@ def indices2array(indices):
 	for index in indices:
 		a[index]+=1
 	return a
-
-def write_log_time(last_update):
-	with open(RECEIVEDFILE, 'r') as f:
-		log_dict = pickle.load(f)
-	log_dict['last_update'] = last_update
-	with open(RECEIVEDFILE, 'w') as f:
-		pickle.dump(log_dict, f)
 
 def log(server):
 	reviews = fetch_reviews(server)
